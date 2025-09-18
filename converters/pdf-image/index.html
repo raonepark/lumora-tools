@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF → 이미지 변환기 · Lumora</title>
+  <style>
+    :root{ --bg:#1e1e1e; --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; --cols:3; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",sans-serif}
+    .wrap{max-width:980px;margin:40px auto;padding:0 16px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .card h1{font-size:22px;margin:0;padding:20px;border-bottom:1px solid var(--border)}
+    .body{padding:18px}
+    .row{display:flex;gap:18px;flex-wrap:wrap}
+    .col{flex:1;min-width:260px}
+    .drop{padding:18px;border:2px dashed #4a4a4a;border-radius:12px;text-align:center;color:var(--muted);background:#202020}
+    .drop.drag{border-color:var(--accent);background:#1b2233;color:#cfe0ff}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#333;color:#fff;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#081126;border-color:#5d83ff;font-weight:700}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .opts label{display:block;margin:8px 0 4px;color:#c9d1d9}
+    .opts input,.opts select{width:100%;padding:8px 10px;background:#1f1f1f;border:1px solid #3a3a3a;border-radius:8px;color:#e6edf3}
+    .progress{height:8px;background:#1a1a1a;border:1px solid #333;border-radius:999px;overflow:hidden}
+    .progress>div{height:100%;width:0;background:linear-gradient(90deg,#7aa2ff,#9cd6ff)}
+    .small{font-size:12px;color:var(--muted)}
+    .hint{color:var(--muted);font-size:12px;margin-top:8px}
+    .preview{margin-top:10px;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:10px;max-height:520px;overflow:auto;padding:4px}
+    .thumb{position:relative}
+    .thumb canvas{width:100%;height:auto;display:block;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+    .thumb .meta{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:999px;font-size:11px;color:#dfe7ff}
+
+    .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .toolbar .inline{display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .toolbar .inline label{color:#c9d1d9}
+
+    footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+
+    /* Lightbox viewer */
+    .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999}
+    .viewer.show{display:flex}
+    .viewer .stage{position:relative;max-width:96vw;max-height:86vh;border-radius:12px;overflow:hidden;border:1px solid #2b2b2b;background:#111}
+    .viewer canvas{display:block}
+    .vbar{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;display:flex;gap:8px;background:#1f1f1f;border:1px solid #333;border-radius:999px;padding:6px 10px}
+    .vbar button{background:#2a2a2a;border:1px solid #3a3a3a;color:#e6edf3;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .vclose{position:absolute;top:10px;right:10px}
+  </style>
+  <noscript><div style="background:#4b0000;color:#fff;padding:12px">이 도구는 자바스크립트가 필요합니다.</div></noscript>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>PDF → 이미지 변환기 <span class="small">(클라이언트만으로 동작)</span></h1>
+      <div class="body">
+        <div class="row">
+          <div class="col">
+            <div id="drop" class="drop">
+              <div><strong>PDF</strong> 파일을 끌어다 놓거나 선택하세요.</div>
+              <div class="hint">각 페이지를 PNG/JPG 이미지로 저장합니다.</div>
+              <div style="margin-top:10px"><label class="btn"><input id="file" type="file" accept="application/pdf" hidden>파일 선택</label></div>
+            </div>
+            <div class="opts" style="margin-top:12px">
+              <label>출력 형식</label>
+              <select id="fmt"><option value="png">PNG (무손실)</option><option value="jpeg">JPG (용량 작음)</option></select>
+              <label>해상도 스케일 (1 = 72dpi 기준)</label>
+              <input id="scale" type="range" min="1" max="4" step="0.25" value="2" />
+              <label>JPG 품질</label>
+              <input id="jpgQ" type="range" min="0.5" max="1" step="0.05" value="0.92" />
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+              <button id="btn" class="btn primary" disabled>이미지로 저장</button>
+              <div class="progress" style="flex:1"><div id="prog"></div></div>
+            </div>
+            <div class="small" id="count"></div>
+          </div>
+          <div class="col">
+            <div class="drop" style="text-align:left">
+              <div class="toolbar">
+                <strong>미리보기</strong>
+                <div class="inline"><label>열 수</label>
+                  <select id="cols" style="width:86px"><option>2</option><option selected>3</option><option>4</option><option>6</option></select>
+                </div>
+                <div class="inline"><label>썸네일 크기(%)</label>
+                  <input id="thumb" type="range" min="40" max="120" step="5" value="60" style="width:120px" />
+                </div>
+              </div>
+              <div id="preview" class="preview" style="--cols:3"></div>
+              <div class="hint">썸네일을 클릭하면 **개별 줌 뷰어**로 확대/축소하며 볼 수 있어요.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      주의: 브라우저 메모리 제약으로 매우 긴 PDF는 실패할 수 있습니다.<br>
+      그럴 땐 해상도를 낮추거나 파일을 나눠 주세요.
+    </footer>
+  </div>
+
+  <!-- Lightbox Viewer -->
+  <div id="viewer" class="viewer" role="dialog" aria-modal="true">
+    <div class="stage"><canvas id="vcanvas"></canvas>
+      <div class="vbar">
+        <button id="zoomOut">−</button>
+        <button id="zoomFit">맞춤</button>
+        <button id="zoomIn">＋</button>
+      </div>
+      <button id="vclose" class="vclose btn">닫기</button>
+    </div>
+  </div>
+
+  <script>
+  // ===== Robust pdf.js loader (UMD) with CSP-friendly workerless mode =====
+  (async function(){
+    const $ = (s)=>document.querySelector(s);
+    function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=false; s.crossOrigin='anonymous'; s.onload=()=>res(true); s.onerror=()=>rej(new Error('load fail '+src)); document.head.appendChild(s); }); }
+    async function ensurePDFJS(){ if(window.pdfjsLib) return true; const cdns=['https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/legacy/build/pdf.min.js','https://unpkg.com/pdfjs-dist@4.6.82/legacy/build/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.js','https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js','https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js']; for(const u of cdns){ try{ await loadScript(u); if(window.pdfjsLib) return true; }catch(e){} } return !!window.pdfjsLib; }
+    if(!await ensurePDFJS()){ alert('pdf.js 로드 실패: 네트워크/차단기 확인 바랍니다.'); return; }
+
+    // ===== App logic =====
+    const drop=$('#drop'), file=$('#file'), btn=$('#btn'), count=$('#count'), prog=$('#prog'), preview=$('#preview');
+    const colsSel=$('#cols'), thumbRange=$('#thumb');
+    let pdfFile=null, pdfDoc=null; const pageCache={};
+
+    const setCols=()=>{ const n=parseInt(colsSel.value)||3; preview.style.setProperty('--cols', n); };
+    const getPreviewScaleFactor=()=> (parseFloat(thumbRange.value)||60)/100; setCols(); colsSel.addEventListener('change', setCols);
+
+    // DnD
+    const setDrag=(on)=>drop.classList.toggle('drag', !!on);
+    ;['dragenter','dragover'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(true);}));
+    ;['dragleave','drop'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(false);}));
+    drop.addEventListener('drop', async ev=>{ ev.preventDefault(); await handlePDF([...ev.dataTransfer.files][0]); });
+    file.addEventListener('change', async ev=>{ await handlePDF(ev.target.files[0]); });
+
+    async function handlePDF(f){
+      if(!f || f.type!=='application/pdf'){ alert('PDF를 선택하세요.'); return; }
+      pdfFile=f; preview.innerHTML=''; btn.disabled=true; prog.style.width='0%'; Object.keys(pageCache).forEach(k=>delete pageCache[k]);
+      const data=await f.arrayBuffer(); pdfDoc = await pdfjsLib.getDocument({ data, disableWorker: true }).promise; count.textContent=`${pdfDoc.numPages}페이지`;
+      await renderPreview(); btn.disabled=false;
+    }
+
+    async function renderPreview(){
+      preview.innerHTML='';
+      const baseScale=parseFloat($('#scale').value)||2; const pvScale=Math.max(0.25, baseScale*getPreviewScaleFactor());
+      const pv=Math.min(24, pdfDoc.numPages); // 미리보기 최대 24p
+      for(let p=1;p<=pv;p++){
+        const cell=document.createElement('div'); cell.className='thumb'; cell.dataset.page=p;
+        const canvas=document.createElement('canvas'); cell.appendChild(canvas);
+        const meta=document.createElement('div'); meta.className='meta'; meta.textContent='p'+String(p).padStart(2,'0'); cell.appendChild(meta);
+        preview.appendChild(cell);
+        // 렌더 (비동기로)
+        (async()=>{ const page=await getPage(p); const vp=page.getViewport({scale:pvScale}); canvas.width=vp.width; canvas.height=vp.height; const ctx=canvas.getContext('2d'); await page.render({canvasContext:ctx, viewport:vp}).promise; })();
+      }
+    }
+
+    async function getPage(p){ if(pageCache[p]) return pageCache[p]; const pg=await pdfDoc.getPage(p); pageCache[p]=pg; return pg; }
+
+    thumbRange.addEventListener('input', ()=>{ if(pdfDoc) renderPreview(); });
+    $('#scale').addEventListener('input', ()=>{ if(pdfDoc) renderPreview(); });
+
+    // Export
+    btn.addEventListener('click', async ()=>{
+      if(!pdfDoc){ alert('PDF를 먼저 선택하세요.'); return; }
+      btn.disabled=true; prog.style.width='0%';
+      try{
+        const base = pdfFile.name.replace(/\.pdf$/i,''); const fmt=$('#fmt').value; const scale=parseFloat($('#scale').value)||2; const jpgQ=parseFloat($('#jpgQ').value)||0.92;
+        if(!window.JSZip){ await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'); }
+        const zip = new JSZip();
+        for(let p=1;p<=pdfDoc.numPages;p++){
+          const page = await getPage(p); const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas'); canvas.width=Math.floor(viewport.width); canvas.height=Math.floor(viewport.height);
+          const ctx = canvas.getContext('2d',{willReadFrequently:true}); await page.render({canvasContext:ctx, viewport}).promise;
+          const blob = await new Promise(res=> canvas.toBlob(res, `image/${fmt}`, fmt==='jpeg'? jpgQ : undefined));
+          const buf = await blob.arrayBuffer(); zip.file(`${base}_p${String(p).padStart(3,'0')}.${fmt==='jpeg'?'jpg':'png'}`, buf);
+          prog.style.width = `${Math.round((p/pdfDoc.numPages)*100)}%`; await new Promise(r=>setTimeout(r));
+        }
+        const out = await zip.generateAsync({type:'blob'}); downloadBlob(out, `${base}_pages.zip`);
+      }catch(e){ console.error(e); alert('추출 중 오류가 발생했습니다. (콘솔 확인)'); }
+      finally{ btn.disabled=false; prog.style.width='0%'; }
+    });
+
+    function downloadBlob(blob, filename){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+
+    // ========= Individual Zoom Viewer =========
+    const viewer=$('#viewer'), vcanvas=$('#vcanvas'), vclose=$('#vclose');
+    const zoomInBtn=$('#zoomIn'), zoomOutBtn=$('#zoomOut'), zoomFitBtn=$('#zoomFit');
+    let viewPage=1, viewScale=1, fitScale=1, isPanning=false, panStart=[0,0], panOffset=[0,0];
+
+    preview.addEventListener('click', async (e)=>{
+      const t=e.target.closest('.thumb'); if(!t) return; const p=parseInt(t.dataset.page); await openViewer(p);
+    });
+
+    async function openViewer(p){ viewPage=p; panOffset=[0,0];
+      viewer.classList.add('show'); await renderViewer('fit');
+    }
+
+    async function renderViewer(mode){
+      const page=await getPage(viewPage); const baseScale=parseFloat($('#scale').value)||2; // start from export scale
+      if(mode==='fit'){
+        // compute scale to fit stage area
+        const stage=viewer.querySelector('.stage'); const w=stage.clientWidth, h=stage.clientHeight;
+        const trial=page.getViewport({scale:1}); const sx=w/trial.width, sy=h/trial.height; fitScale=Math.max(Math.min(sx, sy)*0.98, 0.25); viewScale=fitScale;
+        panOffset=[0,0];
+      }
+      const scale=(mode==='fit')? viewScale : viewScale; // keeps current unless fit
+      const viewport=page.getViewport({scale}); vcanvas.width=viewport.width; vcanvas.height=viewport.height; const ctx=vcanvas.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,vcanvas.width,vcanvas.height);
+      await page.render({canvasContext:ctx, viewport}).promise;
+    }
+
+    function setZoom(mult){ viewScale=Math.min(Math.max(viewScale*mult, 0.25), 6); renderViewer(); }
+    zoomInBtn.addEventListener('click', ()=>setZoom(1.2));
+    zoomOutBtn.addEventListener('click', ()=>setZoom(1/1.2));
+    zoomFitBtn.addEventListener('click', ()=>renderViewer('fit'));
+
+    // Mouse wheel zoom
+    vcanvas.addEventListener('wheel', (e)=>{ e.preventDefault(); const d=e.deltaY>0? (1/1.15) : 1.15; setZoom(d); }, {passive:false});
+
+    // Drag to pan (CSS not needed since we re-render whole canvas; we pan by translating context)
+    vcanvas.addEventListener('mousedown', (e)=>{ isPanning=true; panStart=[e.clientX, e.clientY]; vcanvas.style.cursor='grabbing'; });
+    window.addEventListener('mouseup', ()=>{ isPanning=false; vcanvas.style.cursor='default'; });
+    window.addEventListener('mousemove', (e)=>{ if(!isPanning) return; const dx=e.clientX-panStart[0], dy=e.clientY-panStart[1]; panStart=[e.clientX,e.clientY]; panOffset[0]+=dx; panOffset[1]+=dy; const ctx=vcanvas.getContext('2d'); ctx.translate(dx, dy); });
+
+    vclose.addEventListener('click', ()=>{ viewer.classList.remove('show'); });
+    viewer.addEventListener('click', (e)=>{ if(e.target===viewer) viewer.classList.remove('show'); });
+
+  })();
+  </script>
+</body>
+</html>

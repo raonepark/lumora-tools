@@ -1,0 +1,161 @@
+<!-- PNG/JPG → ICO 변환기 (투명 유지, 16/32/48/64 동시 내장) -->
+<div style="background:#1e1e1e;padding:20px;border-radius:12px;color:#eee;font-family:'Noto Sans',system-ui,Segoe UI,Roboto,'Noto Sans KR',sans-serif;max-width:460px;margin:30px auto;text-align:center;box-shadow:0 0 10px rgba(0,0,0,.4);">
+  <h3 style="margin-bottom:12px;font-weight:600;color:#fff;" data-ke-size="size23">PNG/JPG → ICO 변환</h3>
+  <input id="imageInput" style="margin:12px 0;padding:8px;background:#2a2a2a;color:#ccc;border:1px solid #444;border-radius:6px;width:90%;" accept="image/png, image/jpeg" type="file" />
+  <div style="margin:8px 0 4px;font-size:12px;color:#aaa;">PNG/JPG (권장 512×512 이하, 2MB 이하)</div>
+  <button id="convertBtn" style="padding:10px 20px;margin-top:10px;border:none;border-radius:8px;background:#444;color:#fff;cursor:pointer;transition:.2s;">변환하기</button>
+  <p id="status" style="margin-top:15px;font-size:14px;color:#aaa;" data-ke-size="size16">&nbsp;</p>
+  <a id="downloadLink" style="display:none;margin-top:15px;padding:10px 20px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;">📥 favicon.ico 다운로드</a>
+</div>
+
+<script>
+(async function () {
+  const sizes = [16, 32, 48, 64];
+  const inputEl = document.getElementById('imageInput');
+  const btn = document.getElementById('convertBtn');
+  const statusEl = document.getElementById('status');
+  const linkEl = document.getElementById('downloadLink');
+  let currentUrl = null;
+
+  function setStatus(text, color) {
+    statusEl.textContent = text || '';
+    statusEl.style.color = color || '#aaa';
+  }
+
+  function drawToCanvas(img, size) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+
+    const iw = img.width, ih = img.height;
+    // contain: 전체 이미지가 보이도록 비율 유지(크롭 방지). 빈 공간은 투명.
+    const scale = Math.min(size / iw, size / ih);
+    const nw = Math.round(iw * scale), nh = Math.round(ih * scale);
+    const dx = Math.floor((size - nw) / 2), dy = Math.floor((size - nh) / 2);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, dx, dy, nw, nh);
+    return c;
+  }
+
+  function canvasToPNGAB(cnv) {
+    return new Promise((resolve, reject) => {
+      cnv.toBlob(b => {
+        if (!b) return reject(new Error('PNG 변환 실패'));
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsArrayBuffer(b);
+      }, 'image/png');
+    });
+  }
+
+  function buildICOFromPNGs(buffers) {
+    const count = buffers.length;
+    const headerSize = 6 + (16 * count);
+    let offset = headerSize;
+    let totalSize = headerSize;
+    for (const buf of buffers) totalSize += buf.byteLength;
+
+    const out = new Uint8Array(totalSize);
+    const dv = new DataView(out.buffer);
+
+    // ICONDIR
+    dv.setUint16(0, 0, true); // reserved
+    dv.setUint16(2, 1, true); // type: 1 = icon
+    dv.setUint16(4, count, true); // count
+
+    // ICONDIRENTRY + 이미지 데이터
+    let entryPos = 6;
+    for (let i = 0; i < count; i++) {
+      const ab = buffers[i];
+      const view = new Uint8Array(ab);
+      const imgSize = view.byteLength;
+      const imgWidth = sizes[i];
+      const imgHeight = sizes[i];
+
+      out[entryPos + 0] = imgWidth === 256 ? 0 : imgWidth;  // width
+      out[entryPos + 1] = imgHeight === 256 ? 0 : imgHeight; // height
+      out[entryPos + 2] = 0; // colors in palette (PNG이므로 0)
+      out[entryPos + 3] = 0; // reserved
+      dv.setUint16(entryPos + 4, 1, true);  // color planes
+      dv.setUint16(entryPos + 6, 32, true); // bits per pixel (PNG 헤더 무시됨)
+      dv.setUint32(entryPos + 8, imgSize, true); // size in bytes
+      dv.setUint32(entryPos + 12, offset, true); // file offset
+      entryPos += 16;
+
+      out.set(view, offset);
+      offset += imgSize;
+    }
+
+    return out.buffer;
+  }
+
+  btn.addEventListener('click', async () => {
+    const file = inputEl.files && inputEl.files[0];
+    if (!file) {
+      alert('이미지를 선택해주세요 (PNG 또는 JPG).');
+      return;
+    }
+
+    if (!/^image\/(png|jpeg)$/i.test(file.type)) {
+      alert('PNG 또는 JPG 이미지만 지원합니다.');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('파일 크기는 2MB 이하만 가능합니다.');
+      return;
+    }
+
+    setStatus('이미지 로딩 중…');
+    btn.disabled = true;
+
+    try {
+      // 이미지 로드
+      const dataUrl = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+
+      const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.decoding = 'async';
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error('이미지 로드 실패'));
+        im.src = dataUrl;
+      });
+
+      setStatus('PNG 준비 중…');
+
+      const pngABs = [];
+      for (const s of sizes) {
+        const cnv = drawToCanvas(img, s);
+        const ab = await canvasToPNGAB(cnv);
+        pngABs.push(ab);
+      }
+
+      setStatus('ICO 패키징 중…');
+
+      const icoAB = buildICOFromPNGs(pngABs);
+      const blob = new Blob([icoAB], { type: 'image/x-icon' });
+
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = URL.createObjectURL(blob);
+
+      linkEl.href = currentUrl;
+      linkEl.download = 'favicon.ico';
+      linkEl.style.display = 'inline-block';
+      setStatus('✅ 변환 완료! 아래 버튼으로 저장하세요.', '#4ade80');
+    } catch (e) {
+      console.error(e);
+      setStatus('변환 중 오류가 발생했어요.', '#f87171');
+      alert('변환 실패: ' + (e && e.message ? e.message : e));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
