@@ -1,74 +1,75 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDF → 이미지 변환기 · Lumora</title>
+<!-- PDF → 이미지 변환기 (namespaced, responsive, no-global) -->
+<div id="pdf2img">
   <style>
-    :root{ --bg:#1e1e1e; --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",sans-serif}
-    .wrap{max-width:980px;margin:40px auto;padding:0 16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
-    .card h1{font-size:22px;margin:0;padding:20px;border-bottom:1px solid var(--border)}
-    .body{padding:18px}
-    .row{display:flex;gap:18px;flex-wrap:wrap}
-    .col{flex:1;min-width:280px}
-    .drop{padding:18px;border:2px dashed #4a4a4a;border-radius:12px;text-align:center;color:var(--muted);background:#202020}
-    .drop.drag{border-color:var(--accent);background:#1b2233;color:#cfe0ff}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#333;color:#fff;cursor:pointer}
-    .btn.primary{background:var(--accent);color:#081126;border-color:#5d83ff;font-weight:700}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-    .opts label{display:block;margin:8px 0 4px;color:#c9d1d9}
-    .opts input,.opts select{width:100%;padding:8px 10px;background:#1f1f1f;border:1px solid #3a3a3a;border-radius:8px;color:#e6edf3}
-    .progress{height:8px;background:#1a1a1a;border:1px solid #333;border-radius:999px;overflow:hidden}
-    .progress>div{height:100%;width:0;background:linear-gradient(90deg,#7aa2ff,#9cd6ff)}
-    .small{font-size:12px;color:var(--muted)}
-    .hint{color:#b6bec8;font-size:12px;margin-top:8px}
+    /* ====== Scope all rules under #pdf2img ====== */
+    #pdf2img { --bg:#1e1e1e; --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; }
+    #pdf2img * { box-sizing: border-box; }
+    #pdf2img .wrap{max-width:980px;margin:24px auto;padding:0 12px}
+    #pdf2img .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    #pdf2img .card h1{font-size:20px;margin:0;padding:16px 18px;border-bottom:1px solid var(--border)}
+    #pdf2img .body{padding:16px}
+    #pdf2img .row{display:flex;gap:16px;flex-wrap:wrap}
+    #pdf2img .col{flex:1;min-width:280px}
+    #pdf2img .drop{padding:16px;border:2px dashed #4a4a4a;border-radius:12px;text-align:center;color:var(--muted);background:#202020}
+    #pdf2img .drop.drag{border-color:var(--accent);background:#1b2233;color:#cfe0ff}
+    #pdf2img .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:#333;color:#fff;cursor:pointer}
+    #pdf2img .btn.primary{background:var(--accent);color:#081126;border-color:#5d83ff;font-weight:700}
+    #pdf2img .btn:disabled{opacity:.6;cursor:not-allowed}
+    #pdf2img .opts label{display:block;margin:8px 0 4px;color:#c9d1d9}
+    #pdf2img .opts input,#pdf2img .opts select{width:100%;padding:8px 10px;background:#1f1f1f;border:1px solid #3a3a3a;border-radius:8px;color:#e6edf3}
+    #pdf2img .progress{height:8px;background:#1a1a1a;border:1px solid #333;border-radius:999px;overflow:hidden}
+    #pdf2img .progress>div{height:100%;width:0;background:linear-gradient(90deg,#7aa2ff,#9cd6ff)}
+    #pdf2img .small{font-size:12px;color:var(--muted)}
+    #pdf2img .hint{color:#b6bec8;font-size:12px;margin-top:8px}
 
-    /* Single Page Viewer */
-    .viewer{border:2px dashed #4a4a4a;border-radius:12px;background:#202020;padding:10px}
-    .vbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-    .vbar .seg{display:flex;gap:6px;align-items:center}
-    .vbtn{background:#2a2a2a;border:1px solid #3a3a3a;color:#e6edf3;border-radius:8px;padding:6px 10px;cursor:pointer}
-    .stage{position:relative;height:520px;overflow:auto;border:1px solid #333;border-radius:10px;background:#111;display:flex;align-items:flex-start;justify-content:center}
-    .stage canvas{display:block}
+    /* Viewer */
+    #pdf2img .viewer{border:2px dashed #4a4a4a;border-radius:12px;background:#202020;padding:10px}
+    #pdf2img .vbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+    #pdf2img .vbar .seg{display:flex;gap:6px;align-items:center}
+    #pdf2img .vbtn{background:#2a2a2a;border:1px solid #3a3a3a;color:#e6edf3;border-radius:8px;padding:6px 10px;cursor:pointer}
+    /* 고정높이 → clamp, 캔버스는 컨테이너 폭에 맞춤 */
+    #pdf2img .stage{position:relative;height:clamp(300px, 60vh, 560px);overflow:auto;border:1px solid #333;border-radius:10px;background:#111;display:flex;align-items:flex-start;justify-content:center}
+    #pdf2img .stage canvas{display:block;max-width:100%;height:auto}
 
-    footer{margin-top:28px;font-size:12px;color:#9aa0a6;text-align:center;line-height:1.6}
-    .usage{margin-top:30px;padding:16px;border-radius:12px;background:#1f1f1f;border:1px solid #2f2f2f;color:#d0d6dc;font-size:13px !important;line-height:1.6 !important}
-    .usage h2{font-size:15px !important;line-height:1.4 !important;margin-top:0 !important;margin-bottom:8px !important;color:#ffffff !important;font-weight:700 !important}
-    .usage ul{margin:6px 0 0 18px !important;padding:0 !important;list-style:disc !important;font-size:13px !important}
-    .usage li{margin:4px 0 !important}
-    .usage strong{font-weight:600 !important}
-    .usage em{font-style:italic !important}
+    #pdf2img footer{margin-top:16px;font-size:12px;color:#9aa0a6;text-align:center;line-height:1.6}
+    #pdf2img .usage{margin-top:18px;padding:14px;border-radius:12px;background:#1f1f1f;border:1px solid #2f2f2f;color:#d0d6dc;font-size:13px;line-height:1.6}
+    #pdf2img .usage h2{font-size:15px;line-height:1.4;margin:0 0 8px;color:#fff;font-weight:700}
+    #pdf2img .usage ul{margin:6px 0 0 18px;padding:0;list-style:disc}
+    #pdf2img .usage li{margin:4px 0}
+
+    /* 좁은 화면 최적화 */
+    @media (max-width:600px){
+      #pdf2img .card h1{font-size:18px}
+      #pdf2img .row{gap:12px}
+      #pdf2img .vbar{gap:6px}
+      #pdf2img input[type="number"]{width:64px}
+    }
   </style>
-  <noscript><div style="background:#4b0000;color:#fff;padding:12px">이 도구는 자바스크립트가 필요합니다.</div></noscript>
-</head>
-<body>
+
   <div class="wrap">
     <div class="card">
       <h1>PDF → 이미지 변환기 <span class="small">(클라이언트만으로 동작)</span></h1>
       <div class="body">
         <div class="row">
           <div class="col">
-            <div id="drop" class="drop">
+            <div id="pdf2img-drop" class="drop">
               <div><strong>PDF</strong> 파일을 끌어다 놓거나 선택하세요.</div>
               <div class="hint">각 페이지를 PNG/JPG 이미지로 저장합니다.</div>
-              <div style="margin-top:10px"><label class="btn"><input id="file" type="file" accept="application/pdf" hidden>파일 선택</label></div>
+              <div style="margin-top:10px"><label class="btn"><input id="pdf2img-file" type="file" accept="application/pdf" hidden>파일 선택</label></div>
             </div>
             <div class="opts" style="margin-top:12px">
               <label>출력 형식</label>
-              <select id="fmt"><option value="png">PNG (무손실)</option><option value="jpeg">JPG (용량 작음)</option></select>
+              <select id="pdf2img-fmt"><option value="png">PNG (무손실)</option><option value="jpeg">JPG (용량 작음)</option></select>
               <label>내보내기 해상도 스케일 (1 = 72dpi 기준)</label>
-              <input id="scale" type="range" min="1" max="4" step="0.25" value="2" />
+              <input id="pdf2img-scale" type="range" min="1" max="4" step="0.25" value="2" />
               <label>JPG 품질</label>
-              <input id="jpgQ" type="range" min="0.5" max="1" step="0.05" value="0.92" />
+              <input id="pdf2img-jpgQ" type="range" min="0.5" max="1" step="0.05" value="0.92" />
             </div>
             <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
-              <button id="btn" class="btn primary" disabled>모든 페이지 이미지로 저장</button>
-              <div class="progress" style="flex:1"><div id="prog"></div></div>
+              <button id="pdf2img-btn" class="btn primary" disabled>모든 페이지 이미지로 저장</button>
+              <div class="progress" style="flex:1"><div id="pdf2img-prog"></div></div>
             </div>
-            <div class="small" id="count"></div>
+            <div class="small" id="pdf2img-count"></div>
           </div>
 
           <div class="col">
@@ -76,19 +77,19 @@
               <div class="vbar">
                 <div class="seg"><strong>문서 보기</strong></div>
                 <div class="seg">
-                  <button id="prev" class="vbtn">이전</button>
-                  <input id="pageInput" type="number" min="1" value="1" style="width:70px;background:#1f1f1f;border:1px solid #3a3a3a;color:#e6edf3;border-radius:8px;padding:6px 8px" />
-                  <span class="small">/ <span id="total">0</span>페이지</span>
-                  <button id="next" class="vbtn">다음</button>
+                  <button id="pdf2img-prev" class="vbtn">이전</button>
+                  <input id="pdf2img-page" type="number" min="1" value="1" />
+                  <span class="small">/ <span id="pdf2img-total">0</span>페이지</span>
+                  <button id="pdf2img-next" class="vbtn">다음</button>
                 </div>
                 <div class="seg" style="margin-left:auto">
-                  <button id="zoomOut" class="vbtn">−</button>
-                  <button id="zoomFit" class="vbtn">맞춤</button>
-                  <button id="zoomIn" class="vbtn">＋</button>
-                  <span id="zoomVal" class="small" style="margin-left:6px">100%</span>
+                  <button id="pdf2img-zoomOut" class="vbtn">−</button>
+                  <button id="pdf2img-zoomFit" class="vbtn">맞춤</button>
+                  <button id="pdf2img-zoomIn" class="vbtn">＋</button>
+                  <span id="pdf2img-zoomVal" class="small" style="margin-left:6px">100%</span>
                 </div>
               </div>
-              <div class="stage" id="stage"><canvas id="canvas"></canvas></div>
+              <div class="stage" id="pdf2img-stage"><canvas id="pdf2img-canvas"></canvas></div>
               <div class="hint">휠로 확대/축소, 드래그로 이동. 페이지 숫자 입력 또는 이전/다음 버튼으로 이동.</div>
             </div>
           </div>
@@ -106,31 +107,70 @@
         <li><strong>이미지로 저장</strong>: 출력 형식·해상도·JPG 품질을 선택 후 "모든 페이지 이미지로 저장"을 누르면 ZIP으로 저장합니다.</li>
       </ul>
     </div>
-
-    <footer>
-      주의: 브라우저 메모리 제약으로 매우 긴 PDF는 실패할 수 있습니다. 그럴 땐 해상도를 낮추거나 파일을 나눠 주세요.
-    </footer>
+    <footer>주의: 매우 긴 PDF는 실패할 수 있습니다. 해상도를 낮추거나 파일을 나눠 주세요.</footer>
   </div>
 
   <script>
-  // ===== pdf.js loader (UMD, workerless) & App Logic =====
   (async function(){
-    const $ = (s)=>document.querySelector(s);
-    function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=false; s.crossOrigin='anonymous'; s.onload=()=>res(true); s.onerror=()=>rej(new Error('load fail '+src)); document.head.appendChild(s); }); }
-    async function ensurePDFJS(){ if(window.pdfjsLib) return true; const cdns=['https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/legacy/build/pdf.min.js','https://unpkg.com/pdfjs-dist@4.6.82/legacy/build/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.js','https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js','https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js']; for(const u of cdns){ try{ await loadScript(u); if(window.pdfjsLib) return true; }catch(e){} } return !!window.pdfjsLib; }
+    const qs = (s)=>document.querySelector('#pdf2img ' + s);
+    
     if(!await ensurePDFJS()){ alert('pdf.js 로드 실패: 네트워크/차단기 확인 바랍니다.'); return; }
-
-    const drop=$('#drop'), file=$('#file'), btn=$('#btn'), count=$('#count'), prog=$('#prog');
-    const fmtSel=$('#fmt'), scaleSel=$('#scale'), jpgQSel=$('#jpgQ');
-    const stage=$('#stage'), canvas=$('#canvas'), pageInput=$('#pageInput'), totalSpan=$('#total');
-    const zoomInBtn=$('#zoomIn'), zoomOutBtn=$('#zoomOut'), zoomFitBtn=$('#zoomFit'), zoomVal=$('#zoomVal');
-    const prevBtn=$('#prev'), nextBtn=$('#next');
+    // 단순 script 삽입
+    function loadScript(src){
+      return new Promise((res, rej)=>{
+        const s = document.createElement('script');
+        s.src = src; s.async = false;
+        s.onload = ()=>res(true);
+        s.onerror = ()=>rej(new Error('load fail '+src));
+        document.head.appendChild(s);
+      });
+    }
+    // pdf.js 다중 폴백(Umd/EsModule + 여러 CDN)
+    async function ensurePDFJS(){
+      if (window.pdfjsLib) return true;
+      const CANDIDATES = [
+        // UMD(legacy) - script 태그 로드
+        {kind:'script', url:'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/legacy/build/pdf.min.js'},
+        {kind:'script', url:'https://unpkg.com/pdfjs-dist@4.6.82/legacy/build/pdf.min.js'},
+        {kind:'script', url:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.js'},
+        // 보수 버전 폴백(3.x)
+        {kind:'script', url:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js'},
+        {kind:'script', url:'https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js'},
+        {kind:'script', url:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'},
+        // ESM(dynamic import) - 일부 환경에서 UMD 차단 시
+        {kind:'module', url:'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs'},
+        {kind:'module', url:'https://unpkg.com/pdfjs-dist@4.6.82/build/pdf.min.mjs'}
+      ];
+      for (const c of CANDIDATES){
+        try{
+          if (c.kind === 'script'){
+            await loadScript(c.url);
+            if (window.pdfjsLib) return true;
+          } else {
+            const mod = await import(/* @vite-ignore */ c.url);
+            // pdfjs v4 ESM: getDocument 등 named export 제공
+            if (mod && mod.getDocument){
+              window.pdfjsLib = mod; // 아래 코드와 호환되도록 참조만 맞춰줌
+              return true;
+            }
+          }
+        }catch(e){
+          console.debug('[pdfjs fallback failed]', c.url);
+        }
+      }
+      return !!window.pdfjsLib;
+    }
+    const drop=qs('#pdf2img-drop'), file=qs('#pdf2img-file'), btn=qs('#pdf2img-btn'), count=qs('#pdf2img-count'), prog=qs('#pdf2img-prog');
+    const fmtSel=qs('#pdf2img-fmt'), scaleSel=qs('#pdf2img-scale'), jpgQSel=qs('#pdf2img-jpgQ');
+    const stage=qs('#pdf2img-stage'), canvas=qs('#pdf2img-canvas'), pageInput=qs('#pdf2img-page'), totalSpan=qs('#pdf2img-total');
+    const zoomInBtn=qs('#pdf2img-zoomIn'), zoomOutBtn=qs('#pdf2img-zoomOut'), zoomFitBtn=qs('#pdf2img-zoomFit'), zoomVal=qs('#pdf2img-zoomVal');
+    const prevBtn=qs('#pdf2img-prev'), nextBtn=qs('#pdf2img-next');
 
     let pdfFile=null, pdfDoc=null, pageCache={}, curPage=1, viewScale=1, fitScale=1;
 
     const setDrag=(on)=>drop.classList.toggle('drag', !!on);
-    ;['dragenter','dragover'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(true);}));
-    ;['dragleave','drop'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(false);}));
+    ['dragenter','dragover'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(true);})); 
+    ['dragleave','drop'].forEach(e=>drop.addEventListener(e, ev=>{ev.preventDefault(); setDrag(false);})); 
     drop.addEventListener('drop', async ev=>{ ev.preventDefault(); await handlePDF([...ev.dataTransfer.files][0]); });
     file.addEventListener('change', async ev=>{ await handlePDF(ev.target.files[0]); });
 
@@ -152,8 +192,11 @@
         const trial=page.getViewport({scale:1}); const w=stage.clientWidth-20, h=stage.clientHeight-20;
         const sx=w/trial.width, sy=h/trial.height; fitScale=Math.max(Math.min(sx, sy), 0.25); viewScale=fitScale;
       }
-      const vp=page.getViewport({scale:viewScale}); canvas.width=vp.width; canvas.height=vp.height; const ctx=canvas.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height);
-      await page.render({canvasContext:ctx, viewport:vp}).promise; zoomVal.textContent = Math.round(viewScale*100) + '%';
+      const vp=page.getViewport({scale:viewScale});
+      canvas.width=vp.width; canvas.height=vp.height;
+      const ctx=canvas.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx, viewport:vp}).promise; 
+      zoomVal.textContent = Math.round(viewScale*100) + '%';
     }
 
     function setZoom(mult){ viewScale=Math.min(Math.max(viewScale*mult, 0.25), 6); renderViewer(); }
@@ -171,11 +214,12 @@
     nextBtn.addEventListener('click', ()=>{ if(!pdfDoc) return; curPage = Math.min(pdfDoc.numPages, curPage+1); pageInput.value=curPage; renderViewer('fit'); });
     pageInput.addEventListener('change', ()=>{ if(!pdfDoc) return; let v=parseInt(pageInput.value)||1; v=Math.min(Math.max(1,v), pdfDoc.numPages); curPage=v; renderViewer('fit'); });
 
-    btn.addEventListener('click', async ()=>{
+    qs('#pdf2img-btn').addEventListener('click', async ()=>{
       if(!pdfDoc){ alert('PDF를 먼저 선택하세요.'); return; }
       btn.disabled=true; prog.style.width='0%';
       try{
-        const base = pdfFile.name.replace(/\.pdf$/i,''); const fmt=fmtSel.value; const escale=parseFloat(scaleSel.value)||2; const jpgQ=parseFloat(jpgQSel.value)||0.92;
+        const base = pdfFile.name.replace(/\.pdf$/i,'');
+        const fmt=fmtSel.value; const escale=parseFloat(scaleSel.value)||2; const jpgQ=parseFloat(jpgQSel.value)||0.92;
         if(!window.JSZip){ await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'); }
         const zip = new JSZip();
         for(let p=1;p<=pdfDoc.numPages;p++){
@@ -192,5 +236,4 @@
     });
   })();
   </script>
-</body>
-</html>
+</div>
