@@ -5,27 +5,6 @@
 
 ---
 
-## 📂 구조
-
-lumora-tools/
-
-├─ converters/ # 변환기 모음
-
-│ ├─ png-jpg/ # PNG ↔ JPG 변환기
-
-│ ├─ pdf-image/ # PDF ↔ 이미지 변환기
-
-│ └─ ico/ # PNG/JPG → ICO 변환기
-
-├─ common/ # 공통 코드/스타일
-
-└─ docs/ # 사용 가이드
-
-yaml
-코드 복사
-
----
-
 ## 🛠️ 현재 제공되는 툴
 - **PNG ↔ JPG 변환기**  
   간단히 이미지 포맷을 서로 변환  
