@@ -1,293 +1,246 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PNG ↔ JPG 변환기 · Lumora</title>
-  <style>
-    :root{ --bg:#1e1e1e; --panel:#262626; --muted:#9aa0a6; --text:#e8eaed; --accent:#7aa2ff; --border:#3a3a3a; }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, sans-serif}
-    .wrap{max-width:720px;margin:40px auto;padding:0 16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-    .card h1{font-size:20px;margin:0;padding:18px 20px;border-bottom:1px solid var(--border)}
-    .content{padding:18px 20px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .stack{display:flex;flex-direction:column;gap:10px}
-    .drop{border:1.5px dashed var(--border);border-radius:12px;padding:16px;text-align:center;background:#202020}
-    .drop.hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(122,162,255,.15) inset}
-    .hint{color:var(--muted);font-size:12px}
-    input[type=file]{display:none}
-    .btns{display:flex;gap:10px;flex-wrap:wrap}
-    button{background:#2b2b2b;color:var(--text);border:1px solid var(--border);padding:10px 14px;border-radius:10px;cursor:pointer;transition:background .2s,border-color .2s,transform .15s}
-    button:hover:not(:disabled){background:#3a3a3a;border-color:var(--accent);transform:translateY(-2px)}
-    button.primary{background:var(--accent);border-color:transparent;color:#0b1021}
-    button.primary:hover:not(:disabled){background:#90b4ff;color:#0b1021}
-    button.danger{background:#3a2323;border-color:#6e2b2b}
-    button.danger:hover:not(:disabled){background:#5a2d2d;border-color:#a33}
-    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
-    .opt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
-    .panel{border:1px solid var(--border);border-radius:12px;padding:12px;background:#1f1f1f}
-    .thumb{border:1px solid var(--border);background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:220px;overflow:hidden}
-    .thumb img{max-width:100%;max-height:340px;display:block}
-    .kv{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .range{width:100%}
-    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted)}
-    .footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#cfd3da}
-    .colorpick{appearance:none;width:100%;height:36px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer}
-    .colorpick::-webkit-color-swatch{border:none;border-radius:8px}
-    .colorpick::-moz-color-swatch{border:none;border-radius:8px}
-    /* 사용 방법 박스: 블로그 전역 CSS와 충돌 방지 */
-    .guide{background:#1f1f1f;border:1px solid var(--border);border-radius:16px;padding:20px;color:var(--text);font-size:14px;line-height:1.6;margin-top:18px}
-    .guide h2{margin:0 0 10px;font-size:16px !important;color:#fff;font-weight:800;letter-spacing:.2px}
-    .guide ol{margin:0;padding-left:20px;font-size:14px !important;list-style:decimal}
-    .guide li{margin:6px 0 !important;line-height:1.6}
-    .guide li b{font-weight:700 !important}
-    @media (max-width:720px){.row{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <h1>PNG ↔ JPG 변환기</h1>
-      <div class="content">
-        <div class="stack">
-          <div id="drop" class="drop" tabindex="0" role="button" aria-label="이미지 업로드 영역">
-            <strong>파일을 여기에 드래그하거나 클릭해서 선택</strong>
-            <div class="hint">지원: PNG, JPG · 최대 25MB (브라우저 메모리 한도 내)</div>
-            <div style="margin-top:10px" class="btns">
-              <label class="chip" for="file" id="fileLabel">파일 선택</label>
-              <input id="file" type="file" accept="image/png,image/jpeg" />
-              <span class="chip" id="meta">원본: 없음</span>
-            </div>
-          </div>
+ <!-- PNG ↔ JPG 변환기 (namespaced, responsive, full features kept) -->
+ <div id="imgx">
+   <style>
+     #imgx{ --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; }
+     #imgx *{ box-sizing:border-box; color:var(--text); }
+     #imgx .wrap{max-width:720px;margin:24px auto;padding:0 14px}
+     #imgx .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+     #imgx .card h1{font-size:20px;margin:0;padding:16px 18px;border-bottom:1px solid var(--border)}
+     #imgx .content{padding:16px 18px}
+     #imgx .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+     #imgx .panel{border:1px solid var(--border);border-radius:12px;padding:12px;background:#1f1f1f}
+     #imgx .drop{border:1.5px dashed var(--border);border-radius:12px;padding:16px;text-align:center;background:#202020}
+     #imgx .drop.hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(122,162,255,.15) inset}
+     #imgx .hint{color:var(--muted);font-size:12px}
+     #imgx .thumb{border:1px solid var(--border);background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:220px;overflow:hidden}
+     #imgx .thumb img{max-width:100%;max-height:360px;display:block}
+     #imgx .btns{display:flex;gap:10px;flex-wrap:wrap}
+     #imgx .btn{background:#2b2b2b;border:1px solid var(--border);padding:10px 14px;border-radius:10px;cursor:pointer}
+     #imgx .btn.primary{background:var(--accent);border-color:transparent;color:#0b1021;font-weight:700}
+     #imgx .btn.danger{background:#3a2323;border-color:#6e2b2b}
+     #imgx .btn[disabled]{opacity:.5;cursor:not-allowed}
+     #imgx .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted)}
+     #imgx .kv{display:flex;align-items:center;justify-content:space-between;gap:10px}
+     #imgx .range{width:100%}
+     #imgx .mono{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#cfd3da}
+     #imgx .footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+     #imgx .guide{background:#1f1f1f;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;font-size:14px;line-height:1.6}
+     #imgx .guide h2{margin:0 0 8px;font-size:16px;font-weight:800}
+     @media (max-width:720px){ #imgx .grid2{grid-template-columns:1fr} }
+   </style>
 
-          <div class="opt">
-            <div class="panel">
-              <div class="kv"><strong>출력 포맷</strong><span id="fmtTag" class="chip">자동</span></div>
-              <div class="btns" style="margin-top:8px">
-                <button id="toJpg">PNG → JPG</button>
-                <button id="toPng">JPG → PNG</button>
-                <button id="auto" class="primary">자동 (입력 반대)</button>
-              </div>
-            </div>
-            <div class="panel">
-              <div class="kv"><strong>옵션</strong><span class="hint">JPG 품질 · 배경색</span></div>
-              <div style="margin-top:6px;display:flex;flex-direction:column;gap:10px">
-                <div class="kv">
-                  <span>JPG 품질 <span id="qv" class="mono">0.92</span></span>
-                  <input id="quality" class="range" type="range" min="0.1" max="1" value="0.92" step="0.01" />
-                </div>
-                <div class="kv">
-                  <span>배경색 (PNG→JPG 시 투명 영역 채움)</span>
-                  <input id="bg" class="colorpick" type="color" value="#ffffff" />
-                </div>
-              </div>
-            </div>
-          </div>
+   <div class="wrap">
+     <div class="card">
+       <h1>PNG ↔ JPG 변환기</h1>
+       <div class="content">
+         <!-- 업로드 -->
+         <div class="panel drop" id="x-drop" tabindex="0" role="button" aria-label="이미지 업로드 영역">
+           <strong>파일을 여기에 드래그하거나 클릭해서 선택</strong>
+           <div class="hint">지원: PNG, JPG · 최대 25MB (브라우저 메모리 한도 내)</div>
+           <div class="btns" style="margin-top:10px">
+             <label class="chip" for="x-file" id="x-label">파일 선택</label>
+             <input id="x-file" type="file" accept="image/png,image/jpeg" style="display:none"/>
+             <span class="chip" id="x-meta">원본: 없음</span>
+             <span class="chip" id="x-fmtTag">자동</span>
+           </div>
+         </div>
 
-          <div class="row">
-            <div class="panel">
-              <div class="kv" style="margin-bottom:8px"><strong>원본 미리보기</strong><span id="origInfo" class="hint">-</span></div>
-              <div class="thumb" id="origThumb"><span class="hint">이미지를 업로드하세요</span></div>
-            </div>
-            <div class="panel">
-              <div class="kv" style="margin-bottom:8px"><strong>변환 결과</strong><span id="outInfo" class="hint">-</span></div>
-              <div class="thumb" id="outThumb"><span class="hint">아직 변환 전입니다</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="footer">
-        <div id="status" class="hint" style="flex:1;white-space:normal;line-height:1.4;word-break:keep-all;max-width:60%">대기 중</div>
-        <div class="btns">
-          <button id="clear" class="danger" disabled>지우기</button>
-          <button id="convert" class="primary" disabled>변환하기</button>
-          <a id="download" download style="display:none"><button>다운로드</button></a>
-        </div>
-      </div>
-    </div>
+         <!-- 포맷 & 옵션 -->
+         <div class="grid2" style="margin-top:12px">
+           <div class="panel">
+             <div class="kv"><strong>출력 포맷</strong><span class="chip">자동</span></div>
+             <div class="btns" style="margin-top:8px">
+               <button id="x-toJpg" class="btn">PNG → JPG</button>
+               <button id="x-toPng" class="btn">JPG → PNG</button>
+               <button id="x-auto"  class="btn primary">자동 (입력 반대)</button>
+             </div>
+           </div>
+           <div class="panel">
+             <div class="kv"><strong>옵션</strong><span class="hint">JPG 품질 · 배경색</span></div>
+             <div style="margin-top:6px;display:flex;flex-direction:column;gap:10px">
+               <div class="kv">
+                 <span>JPG 품질 <span id="x-qv" class="mono">0.92</span></span>
+                 <input id="x-quality" class="range" type="range" min="0.1" max="1" value="0.92" step="0.01" />
+               </div>
+               <div class="kv">
+                 <span>배경색 (PNG→JPG 시 투명 영역 채움)</span>
+                 <input id="x-bg" type="color" value="#ffffff" style="width:120px;height:36px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer"/>
+               </div>
+             </div>
+           </div>
+         </div>
 
-    <div class="guide">
-      <h2>사용 방법</h2>
-      <ol>
-        <li><b>이미지 업로드:</b> PNG 또는 JPG 이미지를 업로드합니다. (권장: 최대 25MB)</li>
-        <li><b>출력 포맷:</b> 자동으로 입력과 반대 포맷이 선택되며, 원하면 직접 PNG↔JPG 전환을 지정할 수 있습니다.</li>
-        <li><b>JPG 품질:</b> JPG로 저장할 경우 압축 품질을 0.1~1.0 사이에서 설정합니다. 값이 높을수록 화질은 좋지만 용량이 커집니다.</li>
-        <li><b>배경색:</b> PNG → JPG 변환 시 투명 영역을 채울 배경색을 고릅니다.</li>
-        <li><b>변환하기:</b> 설정한 옵션대로 이미지를 변환한 뒤, <b>다운로드</b> 버튼으로 저장합니다.</li>
-      </ol>
-    </div>
-  </div>
+         <!-- 미리보기 -->
+         <div class="grid2" style="margin-top:12px">
+           <div class="panel">
+             <div class="kv" style="margin-bottom:8px"><strong>원본 미리보기</strong><span id="x-origInfo" class="hint">-</span></div>
+             <div class="thumb" id="x-origThumb"><span class="hint">이미지를 업로드하세요</span></div>
+           </div>
+           <div class="panel">
+             <div class="kv" style="margin-bottom:8px"><strong>변환 결과</strong><span id="x-outInfo" class="hint">-</span></div>
+             <div class="thumb" id="x-outThumb"><span class="hint">아직 변환 전입니다</span></div>
+           </div>
+         </div>
+       </div>
 
-  <canvas id="canvas" style="display:none"></canvas>
+       <div class="footer">
+         <div id="x-status" class="hint" style="flex:1;white-space:normal;line-height:1.4;word-break:keep-all;max-width:60%">대기 중</div>
+         <div class="btns">
+           <button id="x-clear" class="btn danger" disabled>지우기</button>
+           <button id="x-convert" class="btn primary" disabled>변환하기</button>
+           <a id="x-download" download style="display:none"><button class="btn">다운로드</button></a>
+         </div>
+       </div>
+     </div>
 
-  <script>
-    const el = (id)=>document.getElementById(id);
-    const drop = el('drop');
-    const fileInput = el('file');
-    const fileLabel = el('fileLabel');
-    const meta = el('meta');
-    const fmtTag = el('fmtTag');
-    const origThumb = el('origThumb');
-    const outThumb = el('outThumb');
-    const origInfo = el('origInfo');
-    const outInfo = el('outInfo');
-    const convertBtn = el('convert');
-    const downloadA = el('download');
-    const clearBtn = el('clear');
-    const qualityR = el('quality');
-    const qv = el('qv');
-    const bgPick = el('bg');
-    const toJpgBtn = el('toJpg');
-    const toPngBtn = el('toPng');
-    const autoBtn = el('auto');
-    const canvas = el('canvas');
-    const ctx = canvas.getContext('2d');
+     <div class="guide">
+       <h2>사용 방법</h2>
+       <ol>
+         <li><b>이미지 업로드:</b> PNG 또는 JPG를 업로드합니다. (권장: 최대 25MB)</li>
+         <li><b>출력 포맷:</b> 자동(입력 반대) 또는 직접 PNG↔JPG를 선택합니다.</li>
+         <li><b>옵션:</b> JPG로 저장 시 품질과 배경색(투명 채움)을 조정합니다.</li>
+         <li><b>변환하기:</b> 변환 후 <b>다운로드</b>로 저장합니다.</li>
+       </ol>
+     </div>
+   </div>
 
-    let file = null; // 현재 업로드 파일
-    let img = null;  // HTMLImageElement
-    let target = 'auto'; // 'jpg' | 'png' | 'auto'
+   <canvas id="x-canvas" style="display:none"></canvas>
 
-    function fmtBytes(bytes){
-      if(!Number.isFinite(bytes)) return '-';
-      const units=['B','KB','MB','GB'];
-      let i=0; let v=bytes;
-      while(v>1024 && i<units.length-1){v/=1024; i++}
-      return v.toFixed((i===0)?0:2)+' '+units[i]
-    }
+   
+    <script>
+    ;(function(){
+      const qs = (sel)=>document.querySelector('#imgx ' + sel);
+      const drop = qs('#x-drop'), input = qs('#x-file'), label = qs('#x-label');
+      const meta = qs('#x-meta'), fmtTag = qs('#x-fmtTag');
+      const origThumb = qs('#x-origThumb'), outThumb = qs('#x-outThumb');
+      const origInfo = qs('#x-origInfo'), outInfo = qs('#x-outInfo');
+      const btnConvert = qs('#x-convert'), btnClear = qs('#x-clear'), aDownload = qs('#x-download');
+      const toJpg = qs('#x-toJpg'), toPng = qs('#x-toPng'), autoBtn = qs('#x-auto');
+      const quality = qs('#x-quality'), qv = qs('#x-qv'), bg = qs('#x-bg');
+      const statusEl = qs('#x-status');
+      const canvas = qs('#x-canvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
 
-    function setStatus(text){ el('status').textContent = text }
+      let file = null, img = null, target = 'auto';
 
-    function resetOutput(){
-      outThumb.innerHTML = '<span class="hint">아직 변환 전입니다</span>';
-      outInfo.textContent = '-';
-      downloadA.style.display = 'none';
-      downloadA.removeAttribute('href');
-      downloadA.removeAttribute('download');
-    }
-
-    function chooseTargetAuto(){
-      if(!file) return 'jpg';
-      const ext = (file.name.split('.').pop()||'').toLowerCase();
-      return ext === 'png' ? 'jpg' : 'png';
-    }
-
-    function updateFmtTag(){
-      const t = (target==='auto'? chooseTargetAuto(): target).toUpperCase();
-      fmtTag.textContent = `출력: ${t}`;
-    }
-
-    function loadFile(f){
-      if(!f) return;
-      if(!/^image\/(png|jpeg)$/.test(f.type)){
-        alert('PNG 또는 JPG 이미지만 지원합니다.');
-        return;
+      const fmtBytes = (b)=>{ if(!Number.isFinite(b)) return '-'; const u=['B','KB','MB','GB']; let i=0,v=b; while(v>1024&&i<u.length-1){v/=1024;i++} return v.toFixed(i?2:0)+' '+u[i]; };
+      const setStatus = (t)=> statusEl.textContent = t;
+      const hexToRgb = (h)=>{ const m=/^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(h); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:255,g:255,b:255}; };
+      function isSupportedImage(f){
+        const t=(f.type||'').toLowerCase();
+        if (t==='image/png'||t==='image/jpeg'||t==='image/jpg'||t==='image/pjpeg'||t==='image/x-png') return true;
+        const ext=(f.name.split('.').pop()||'').toLowerCase();
+        return ext==='png'||ext==='jpg'||ext==='jpeg';
       }
-      file = f; resetOutput(); updateFmtTag();
-      meta.textContent = `원본: ${file.name} · ${fmtBytes(file.size)}`;
-      const reader = new FileReader();
-      reader.onload = e => {
-        img = new Image();
-        img.onload = ()=>{
+      function chooseTargetAuto(){
+        if(!file) return 'jpg';
+        const ext=(file.name.split('.').pop()||'').toLowerCase();
+        return ext==='png' ? 'jpg' : 'png';
+      }
+      function updateFmtTag(){
+        const t=(target==='auto'? chooseTargetAuto(): target).toUpperCase();
+        fmtTag.textContent='출력: '+t;
+      }
+      function resetOutput(){
+        outThumb.innerHTML='<span class="hint">아직 변환 전입니다</span>';
+        outInfo.textContent='-';
+        aDownload.style.display='none'; aDownload.removeAttribute('href'); aDownload.removeAttribute('download');
+      }
+
+      // ✅ 단일 loadFile (ObjectURL 사용)
+      function loadFile(f){
+        if(!f) return;
+        if(!isSupportedImage(f)){ alert('PNG 또는 JPG만 지원합니다.'); return; }
+        file=f; resetOutput(); updateFmtTag();
+        meta.textContent='원본: '+file.name+' · '+fmtBytes(file.size);
+        const url = URL.createObjectURL(f);
+        const im = new Image();
+        im.onload = ()=>{
+          img = im;
           origThumb.innerHTML = '';
-          const tag = document.createElement('img');
-          tag.alt = '원본 이미지 미리보기';
-          tag.src = img.src;
-          origThumb.appendChild(tag);
-          origInfo.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
-          convertBtn.disabled = false;
-          clearBtn.disabled = false;
-          setStatus('이미지 로드 완료');
-          updateFmtTag();
-          // 같은 파일을 다시 선택해도 항상 change가 발생하도록
-          fileInput.value = '';
+          im.alt = '원본 미리보기';
+          origThumb.appendChild(im);        // 새 태그 만들지 말고, 로드된 노드 그대로 붙임
+          origInfo.textContent = im.naturalWidth + '×' + im.naturalHeight;
+          btnConvert.disabled = false; btnClear.disabled = false;
+          setStatus('이미지 로드 완료'); input.value = ''; updateFmtTag();
+          // 미리보기가 그려진 다음 URL 해제 (너무 일찍 revoke하면 깨짐)
+          setTimeout(()=> URL.revokeObjectURL(url), 1000);
         };
-        img.onerror = ()=>{
+        im.onerror = ()=>{
+          URL.revokeObjectURL(url);
           alert('이미지를 불러오지 못했습니다.');
-          convertBtn.disabled = true;
+          btnConvert.disabled = true;
         };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(f);
-    }
+        im.src = url;
+      }
 
-    // 드래그 & 드롭
-    ['dragenter','dragover'].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault(); drop.classList.add('hover')}));
-    ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{e.preventDefault(); drop.classList.remove('hover')}));
-    drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files?.[0]; if(f) loadFile(f) });
+      // DnD & 클릭 (옵셔널 체이닝 제거)
+      ['dragenter','dragover'].forEach(function(type){
+        drop.addEventListener(type, function(e){ e.preventDefault(); drop.classList.add('hover'); });
+      });
+      ['dragleave','drop'].forEach(function(type){
+        drop.addEventListener(type, function(e){ e.preventDefault(); drop.classList.remove('hover'); });
+      });
+      drop.addEventListener('drop', function(e){
+        var files = e.dataTransfer && e.dataTransfer.files;
+        var f = files && files[0];
+        if(f) loadFile(f);
+      });
+      label.addEventListener('click', function(e){ e.stopPropagation(); });
+      drop.addEventListener('click', function(){ input.click(); });
+      input.addEventListener('change', function(e){
+        var files = e.target && e.target.files;
+        var f = files && files[0];
+        if(f) loadFile(f);
+      });
 
-    // 클릭으로 파일 선택 — 라벨 클릭은 버블링 차단(이중 팝업 방지)
-    document.getElementById('fileLabel').addEventListener('click', (e)=>{ e.stopPropagation(); });
-    drop.addEventListener('click', (e)=>{
-      if (e.target.closest('#fileLabel') || e.target.closest('#file')) return; // 내부 라벨/인풋 클릭은 무시
-      fileInput.click();
-    });
+      // 포맷 선택
+      toJpg.onclick=function(){ target='jpg'; updateFmtTag(); };
+      toPng.onclick=function(){ target='png'; updateFmtTag(); };
+      autoBtn.onclick=function(){ target='auto'; updateFmtTag(); };
 
-    fileInput.addEventListener('change', (e)=>{
-      const f = e.target.files && e.target.files[0];
-      if (f) loadFile(f);
-    });
+      // 옵션 표시
+      quality.oninput=function(){ qv.textContent = Number(quality.value).toFixed(2); };
 
-    // 포맷 선택
-    toJpgBtn.onclick = ()=>{ target='jpg'; updateFmtTag(); };
-    toPngBtn.onclick = ()=>{ target='png'; updateFmtTag(); };
-    autoBtn.onclick  = ()=>{ target='auto'; updateFmtTag(); };
+      function renderToCanvas(targetMime){
+        if(!ctx||!img) return;
+        const w=img.naturalWidth, h=img.naturalHeight;
+        canvas.width=w; canvas.height=h;
+        if(targetMime==='image/jpeg'){
+          const {r,g,b}=hexToRgb(bg.value);
+          ctx.save(); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,0,w,h); ctx.restore();
+        }else{
+          ctx.clearRect(0,0,w,h);
+        }
+        ctx.drawImage(img,0,0,w,h);
+      }
+      function convert(){
+        if(!img) return;
+        btnConvert.disabled=true; setStatus('변환 중…');
+        const autoExt=chooseTargetAuto();
+        const targetMime=(target==='auto' ? (autoExt==='jpg'?'image/jpeg':'image/png') : (target==='jpg'?'image/jpeg':'image/png'));
+        renderToCanvas(targetMime);
+        const q=Number(quality.value);
+        const dataUrl=canvas.toDataURL(targetMime, targetMime==='image/jpeg' && isFinite(q)? q : undefined);
+        outThumb.innerHTML=''; const outImg=new Image(); outImg.src=dataUrl; outImg.alt='변환 미리보기'; outThumb.appendChild(outImg);
+        const base64=dataUrl.split(',')[1]||''; const bytes=Math.ceil(base64.length*3/4);
+        outInfo.textContent=(targetMime==='image/jpeg'?'JPG':'PNG')+' · '+fmtBytes(bytes);
+        const base=(file && file.name ? file.name : 'image').replace(/\.(png|jpg|jpeg)$/i,'');
+        const outName=base+(targetMime==='image/jpeg'?'.jpg':'.png');
+        aDownload.href=dataUrl; aDownload.download=outName; aDownload.style.display='inline-block';
+        setStatus('완료'); btnConvert.disabled=false;
+      }
+      btnConvert.addEventListener('click', convert);
 
-    // 옵션 표시
-    qualityR.oninput = ()=> qv.textContent = Number(qualityR.value).toFixed(2);
+      function clearAll(){
+        file=null; img=null; target='auto';
+        meta.textContent='원본: 없음';
+        origThumb.innerHTML='<span class="hint">이미지를 업로드하세요</span>'; origInfo.textContent='-';
+        resetOutput(); btnConvert.disabled=true; btnClear.disabled=true; setStatus('초기화 완료'); input.value=''; updateFmtTag();
+      }
+      btnClear.addEventListener('click', clearAll);
 
-    function hexToRgb(hex){
-      const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
-      if(!m) return {r:255,g:255,b:255};
-      return {r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16)};
-    }
-
-    function renderToCanvas(targetType){
-      const w = img.naturalWidth, h = img.naturalHeight;
-      canvas.width = w; canvas.height = h;
-      if(targetType==='image/jpeg'){
-        const {r,g,b} = hexToRgb(bgPick.value);
-        ctx.save(); ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fillRect(0,0,w,h); ctx.restore();
-      } else { ctx.clearRect(0,0,w,h); }
-      ctx.drawImage(img, 0, 0, w, h);
-    }
-
-    async function convert(){
-      if(!img) return;
-      convertBtn.disabled = true; setStatus('변환 중…');
-      const extAuto = (file && (file.name.split('.').pop()||'').toLowerCase()==='png') ? 'image/jpeg' : 'image/png';
-      const targetMime = target==='auto' ? extAuto : (target==='jpg' ? 'image/jpeg' : 'image/png');
-      renderToCanvas(targetMime);
-      const q = Number(qualityR.value);
-      const dataUrl = canvas.toDataURL(targetMime, isFinite(q)? q : undefined);
-      outThumb.innerHTML='';
-      const outImg = new Image(); outImg.src = dataUrl; outImg.alt = '변환된 이미지 미리보기'; outThumb.appendChild(outImg);
-      const base64 = dataUrl.split(',')[1] || ''; const byteLen = Math.ceil(base64.length * 3/4);
-      outInfo.textContent = `${targetMime==='image/jpeg'?'JPG':'PNG'} · ${fmtBytes(byteLen)}`;
-      const base = (file?.name || 'image').replace(/\.(png|jpg|jpeg)$/i,'');
-      const outName = base + (targetMime==='image/jpeg'? '.jpg' : '.png');
-      downloadA.href = dataUrl; downloadA.download = outName; downloadA.style.display = 'inline-block';
-      setStatus('완료');
-      convertBtn.disabled = false;
-    }
-
-    convertBtn.addEventListener('click', convert);
-
-    function clearAll(){
-      file = null; img = null; target = 'auto';
-      meta.textContent = '원본: 없음';
-      origThumb.innerHTML = '<span class="hint">이미지를 업로드하세요</span>';
-      origInfo.textContent = '-';
-      resetOutput();
-      convertBtn.disabled = true; clearBtn.disabled = true;
-      setStatus('초기화 완료'); updateFmtTag();
-      fileInput.value = '';
-    }
-    clearBtn.addEventListener('click', clearAll);
-
-    setStatus('이미지를 업로드한 뒤 포맷을 선택하고 변환하세요. PNG→JPG 시 투명 영역은 선택한 배경색으로 채워집니다.');
+      setStatus('이미지를 업로드한 뒤 포맷을 선택하고 변환하세요. PNG→JPG 시 투명 영역은 선택한 배경색으로 채워집니다.');
+    })();
   </script>
-</body>
-</html>
+</div> 
