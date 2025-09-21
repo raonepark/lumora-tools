@@ -2,7 +2,7 @@
 <div id="pdf2img">
   <style>
     /* ====== Scope all rules under #pdf2img ====== */
-    #pdf2img { --bg:#1e1e1e; --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; }
+    #pdf2img { --bg:#1e1e1e; --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; --usage-font-family:inherit; --usage-font-size:clamp(14px, 0.95rem, 16px); --usage-title-size:clamp(16px, 1.05rem, 18px); --usage-text-color:#f6f8ff; --usage-strong-color:#ffffff; }
     #pdf2img * { box-sizing: border-box; }
     #pdf2img .wrap{max-width:980px;margin:24px auto;padding:0 12px}
     #pdf2img .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
@@ -12,9 +12,15 @@
     #pdf2img .col{flex:1;min-width:280px}
     #pdf2img .drop{padding:16px;border:2px dashed #4a4a4a;border-radius:12px;text-align:center;color:var(--muted);background:#202020}
     #pdf2img .drop.drag{border-color:var(--accent);background:#1b2233;color:#cfe0ff}
-    #pdf2img .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:#333;color:#fff;cursor:pointer}
-    #pdf2img .btn.primary{background:var(--accent);color:#081126;border-color:#5d83ff;font-weight:700}
-    #pdf2img .btn:disabled{opacity:.6;cursor:not-allowed}
+    #pdf2img .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:#333;color:#f5f7fb;cursor:pointer;transition:background-color .2s ease, box-shadow .2s ease, transform .2s ease;}
+    #pdf2img .btn:hover:not([disabled]){background:#3b3b3b;transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,.3);}
+    #pdf2img .btn:active:not([disabled]){transform:translateY(0);box-shadow:0 2px 6px rgba(0,0,0,.35);}
+    #pdf2img .btn.primary{background:var(--accent);color:#081126;border-color:#5d83ff;font-weight:700;}
+    #pdf2img .btn.primary:hover:not([disabled]){background:#8bb1ff;box-shadow:0 6px 18px rgba(122,162,255,.35);}
+    #pdf2img .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none;transform:none;}
+    #pdf2img .vbtn{background:#2a2a2a;border:1px solid #3a3a3a;color:#e6edf3;border-radius:8px;padding:6px 10px;cursor:pointer;transition:background-color .2s ease, box-shadow .2s ease, transform .2s ease;}
+    #pdf2img .vbtn:hover{background:#353a44;box-shadow:0 4px 10px rgba(0,0,0,.25);transform:translateY(-1px);}
+    #pdf2img .vbtn:active{transform:translateY(0);box-shadow:0 1px 4px rgba(0,0,0,.3);}
     #pdf2img .opts label{display:block;margin:8px 0 4px;color:#c9d1d9}
     #pdf2img .opts input,#pdf2img .opts select{width:100%;padding:8px 10px;background:#1f1f1f;border:1px solid #3a3a3a;border-radius:8px;color:#e6edf3}
     #pdf2img .progress{height:8px;background:#1a1a1a;border:1px solid #333;border-radius:999px;overflow:hidden}
@@ -27,18 +33,19 @@
     #pdf2img .vbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
     #pdf2img .vbar .seg{display:flex;gap:6px;align-items:center}
     #pdf2img .vbar strong{color:var(--text)} /* "문서 보기" 텍스트 색 고정 */
-    #pdf2img .vbtn{background:#2a2a2a;border:1px solid #3a3a3a;color:#e6edf3;border-radius:8px;padding:6px 10px;cursor:pointer}
     /* 고정높이 → clamp, 캔버스는 컨테이너 폭에 맞춤 (스크롤용으로 max-width 해제) */
     #pdf2img .stage{position:relative;height:clamp(300px, 60vh, 560px);overflow:auto;border:1px solid #333;border-radius:10px;background:#111;display:block}
     #pdf2img .stage canvas{display:block;height:auto;max-width:none;background:#111} /* 핵심: max-width:none 으로 확대 시 가로로 커지게 */
 
     #pdf2img footer{margin-top:16px;font-size:12px;color:#9aa0a6;text-align:center;line-height:1.6}
-    #pdf2img .usage{margin-top:18px;padding:14px;border-radius:12px;background:#1f1f1f;border:1px solid #2f2f2f;color:#d0d6dc;font-size:13px;line-height:1.6}
-    #pdf2img .usage h2{font-size:15px;line-height:1.4;margin:0 0 8px;color:#fff;font-weight:700}
+    #pdf2img .usage{margin-top:18px;padding:14px;border-radius:12px;background:#1f1f1f;border:1px solid #2f2f2f;color:var(--usage-text-color,#d0d6dc);font-size:var(--usage-font-size,14px);line-height:1.65;font-family:var(--usage-font-family,inherit);}
+    #pdf2img .usage h2{font-size:var(--usage-title-size,16px);line-height:1.4;margin:0 0 8px;color:var(--usage-strong-color,#fff);font-weight:700;font-family:var(--usage-font-family,inherit);}
     #pdf2img .usage ul{margin:6px 0 0 18px;padding:0;list-style:disc}
-    #pdf2img .usage li{margin:4px 0}
+    #pdf2img .usage li{margin:4px 0;color:inherit}
+    #pdf2img .usage strong{color:var(--usage-strong-color,#fff);font-weight:600}
 
     @media (max-width:600px){
+      #pdf2img{--usage-font-size:15px;--usage-title-size:17px}
       #pdf2img .card h1{font-size:18px}
       #pdf2img .row{gap:12px}
       #pdf2img .vbar{gap:6px}
