@@ -1,8 +1,8 @@
  <!-- PNG ↔ JPG 변환기 (namespaced, responsive, full features kept) -->
  <div id="imgx">
    <style>
-     #imgx{ --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; }
-     #imgx *{ box-sizing:border-box; color:var(--text); }
+     #imgx{ --panel:#262626; --text:#e8eaed; --muted:#9aa0a6; --accent:#7aa2ff; --border:#3a3a3a; --guide-font-family:inherit; --guide-font-size:clamp(14px, 0.96rem, 16px); --guide-title-size:clamp(16px, 1.08rem, 18px); --guide-color:#f6f8ff; --guide-strong-color:#ffffff; color:var(--text); }
+      #imgx *{ box-sizing:border-box; }
      #imgx .wrap{max-width:720px;margin:24px auto;padding:0 14px}
      #imgx .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
      #imgx .card h1{font-size:20px;margin:0;padding:16px 18px;border-bottom:1px solid var(--border)}
@@ -15,18 +15,30 @@
      #imgx .thumb{border:1px solid var(--border);background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:220px;overflow:hidden}
      #imgx .thumb img{max-width:100%;max-height:360px;display:block}
      #imgx .btns{display:flex;gap:10px;flex-wrap:wrap}
-     #imgx .btn{background:#2b2b2b;border:1px solid var(--border);padding:10px 14px;border-radius:10px;cursor:pointer}
-     #imgx .btn.primary{background:var(--accent);border-color:transparent;color:#0b1021;font-weight:700}
-     #imgx .btn.danger{background:#3a2323;border-color:#6e2b2b}
-     #imgx .btn[disabled]{opacity:.5;cursor:not-allowed}
+     #imgx .btn{display:inline-flex;align-items:center;gap:6px;background:#2b2b2b;border:1px solid var(--border);color:#f1f3f7;padding:10px 14px;border-radius:10px;cursor:pointer;transition:background-color .2s ease, box-shadow .2s ease, transform .2s ease;}
+     #imgx .btn:hover:not([disabled]){background:#353535;transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,.3);}
+     #imgx .btn:active:not([disabled]){transform:translateY(0);box-shadow:0 2px 6px rgba(0,0,0,.35);}
+     #imgx .btn.primary{background:var(--accent);border-color:transparent;color:#0b1021;font-weight:700;}
+     #imgx .btn.primary:hover:not([disabled]){background:#8bb1ff;box-shadow:0 6px 18px rgba(122,162,255,.35);}
+     #imgx .btn.danger{background:#3a2323;border-color:#6e2b2b;}
+     #imgx .btn.danger:hover:not([disabled]){background:#4a2d2d;border-color:#823434;}
+     #imgx .btn.download{background:#5fd3ff;border-color:#2eb4f0;color:#041622;font-weight:700;box-shadow:0 4px 12px rgba(95,211,255,.26);}
+     #imgx .btn.download:hover:not([disabled]){background:#79ddff;box-shadow:0 6px 18px rgba(95,211,255,.35);}
+     #imgx .btn[disabled]{opacity:.5;cursor:not-allowed;box-shadow:none;transform:none;}
      #imgx .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted)}
      #imgx .kv{display:flex;align-items:center;justify-content:space-between;gap:10px}
      #imgx .range{width:100%}
      #imgx .mono{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#cfd3da}
      #imgx .footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
-     #imgx .guide{background:#1f1f1f;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;font-size:14px;line-height:1.6}
-     #imgx .guide h2{margin:0 0 8px;font-size:16px;font-weight:800}
-     @media (max-width:720px){ #imgx .grid2{grid-template-columns:1fr} }
+     #imgx .guide{background:#1f1f1f;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;font-size:var(--guide-font-size,14px);line-height:1.65;font-family:var(--guide-font-family,inherit);color:var(--guide-color,var(--text));}
+     #imgx .guide *{color:var(--guide-color,var(--text));}
+     #imgx .guide h2{margin:0 0 8px;font-size:var(--guide-title-size,16px);font-weight:800;color:var(--guide-strong-color,#fff);font-family:var(--guide-font-family,inherit);}
+     #imgx .guide li{margin:6px 0;color:inherit}
+     #imgx .guide b{color:var(--guide-strong-color,#fff);font-weight:600}
+     @media (max-width:720px){
+       #imgx{--guide-font-size:15px;--guide-title-size:17px}
+       #imgx .grid2{grid-template-columns:1fr}
+     }
    </style>
 
    <div class="wrap">
@@ -88,7 +100,7 @@
          <div class="btns">
            <button id="x-clear" class="btn danger" disabled>지우기</button>
            <button id="x-convert" class="btn primary" disabled>변환하기</button>
-           <a id="x-download" download style="display:none"><button class="btn">다운로드</button></a>
+           <a id="x-download" download style="display:none"><button class="btn download">다운로드</button></a>
          </div>
        </div>
      </div>
@@ -243,4 +255,4 @@
       setStatus('이미지를 업로드한 뒤 포맷을 선택하고 변환하세요. PNG→JPG 시 투명 영역은 선택한 배경색으로 채워집니다.');
     })();
   </script>
-</div> 
+</div>
