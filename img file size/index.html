@@ -1,0 +1,996 @@
+<!-- 
+  [Lumora Tools] 이미지 용량 줄이기 (Image Compressor)
+  - 특징: 서버 전송 없음 (브라우저 Canvas API 사용), 다크 모드, 반응형
+  - 스타일 범위: #img-compress ID 내부로 한정
+-->
+<div id="img-compress">
+    <style>
+        /* ====== 스타일 격리 (Scoped CSS) ====== */
+        #img-compress {
+            --bg: #1e1e1e;
+            --panel: #262626;
+            --panel-soft: #202020;
+            --text: #e8eaed;
+            --muted: #9aa0a6;
+            --accent: #a78bfa;
+            --accent-hover: #c4b5fd;
+            --border: #3a3a3a;
+            --danger: #ff7a94;
+            --success: #4ade80;
+            --font-main: 'Noto Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        #img-compress * {
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        #img-compress .wrap {
+            max-width: 100%;
+            margin: 20px auto;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        #img-compress .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+            overflow: hidden;
+        }
+
+        #img-compress .header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #img-compress h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #img-compress .badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 99px;
+            background: rgba(167, 139, 250, 0.15);
+            /* 보라색 배경 */
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        #img-compress .body {
+            padding: 24px;
+        }
+
+        /* 드래그 앤 드롭 영역 */
+        #img-compress .drop-zone {
+            border: 2px dashed #4a4a4a;
+            border-radius: 12px;
+            background: var(--panel-soft);
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+        }
+
+        #img-compress .drop-zone:hover,
+        #img-compress .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(167, 139, 250, 0.05);
+            transform: translateY(-2px);
+        }
+
+        /* 이미지 아이콘 스타일 */
+        #img-compress .icon-svg {
+            width: 48px;
+            height: 48px;
+            fill: none;
+            stroke: var(--muted);
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            margin-bottom: 16px;
+            transition: stroke 0.2s;
+        }
+
+        #img-compress .drop-zone:hover .icon-svg {
+            stroke: var(--accent);
+        }
+
+        #img-compress .drop-msg {
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #img-compress .drop-hint {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* 컨트롤 영역 */
+        #img-compress .controls {
+            display: none;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        #img-compress .controls.active {
+            display: flex;
+        }
+
+        #img-compress .control-panel {
+            flex: 1;
+            min-width: 280px;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        #img-compress .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 16px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        #img-compress .input-group {
+            margin-bottom: 20px;
+        }
+
+        #img-compress label {
+            display: block;
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        #img-compress input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        #img-compress input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #img-compress select,
+        #img-compress input[type="number"] {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: var(--text);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #img-compress select:focus,
+        #img-compress input[type="number"]:focus {
+            border-color: var(--accent);
+        }
+
+        #img-compress .custom-width-wrap {
+            margin-top: 8px;
+            display: none;
+        }
+
+        #img-compress .custom-width-wrap.active {
+            display: block;
+        }
+
+        /* 미리보기 영역 */
+        #img-compress .preview-area {
+            flex: 1.5;
+            min-width: 300px;
+            background: #151515;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 뷰어 컨트롤 바 (Zoom) */
+        #img-compress .vbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #img-compress .vbar-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--muted);
+            margin-right: auto;
+        }
+
+        #img-compress .vbtn {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #e6edf3;
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        #img-compress .vbtn:hover {
+            background: #353a44;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        #img-compress .vbtn-text {
+            width: auto;
+            padding: 0 8px;
+            font-size: 12px;
+        }
+
+        #img-compress .zoom-val {
+            font-size: 12px;
+            color: var(--muted);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* 뷰어 스테이지 */
+        #img-compress .preview-stage {
+            position: relative;
+            height: clamp(300px, 50vh, 500px);
+            background: #101010;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            /* Scroll handled by inner interaction or manual scroll */
+            /* 체커보드 패턴 */
+            background-image:
+                linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+                linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+                linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #img-compress .preview-img {
+            max-width: none;
+            /* Zoom 로직이 제어 */
+            max-height: none;
+            transition: transform 0.1s ease-out;
+            cursor: grab;
+            user-select: none;
+            transform-origin: center center;
+        }
+
+        #img-compress .preview-img:active {
+            cursor: grabbing;
+        }
+
+        #img-compress .stats {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr;
+            background: #222;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        #img-compress .stat-item strong {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        #img-compress .stat-item span {
+            font-size: 15px;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        #img-compress .stat-divider {
+            width: 1px;
+            height: 24px;
+            background: #444;
+        }
+
+        #img-compress .diff {
+            color: var(--success);
+            font-size: 12px;
+            margin-left: 6px;
+            font-weight: 700;
+        }
+
+        #img-compress .diff.bad {
+            color: var(--danger);
+        }
+
+        #img-compress .tip-box {
+            margin-top: 16px;
+            padding: 14px;
+            background: rgba(167, 139, 250, 0.05);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        #img-compress .tip-box b {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* 사용 방법 */
+        #img-compress .usage-guide {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        #img-compress .usage-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #img-compress .usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #img-compress .usage-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        #img-compress .usage-step:hover {
+            border-color: rgba(167, 139, 250, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        #img-compress .step-num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        #img-compress .step-content {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        #img-compress .step-content strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        /* 버튼 그룹 */
+        #img-compress .btn-group {
+            margin-top: auto;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding-top: 20px;
+            width: 100%;
+        }
+
+        #img-compress .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            min-width: 100px;
+        }
+
+        #img-compress .btn-primary {
+            background: var(--accent);
+            color: #0f0720 !important;
+            border: 1px solid var(--accent);
+        }
+
+        #img-compress .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+        }
+
+        #img-compress .btn-secondary {
+            background: transparent;
+            border: 1px solid #444;
+            color: var(--muted);
+        }
+
+        #img-compress .btn-secondary:hover {
+            border-color: #666;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #img-compress .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 700px) {
+            #img-compress .controls {
+                flex-direction: column;
+            }
+
+            #img-compress .preview-area {
+                min-width: 100%;
+                order: -1;
+            }
+
+            #img-compress .header h2 {
+                font-size: 18px;
+            }
+
+            #img-compress .btn {
+                flex: 1;
+            }
+        }
+    </style>
+
+    <div class="wrap">
+        <div class="card">
+            <div class="header">
+                <h2>📷 이미지 용량 줄이기 <span class="badge">Lite</span></h2>
+                <span style="font-size:12px; color:var(--muted);">서버 전송 없음 (보안 안전)</span>
+            </div>
+
+            <div class="body">
+                <!-- 1. 파일 업로드 영역 -->
+                <div id="ic-drop" class="drop-zone">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <div class="drop-msg">이미지 파일을 여기에 드래그하거나 클릭하세요</div>
+                    <div class="drop-hint">지원: JPG, PNG, WEBP (최대 20MB)</div>
+                    <input type="file" id="ic-input" accept="image/jpeg, image/png, image/webp" hidden>
+                </div>
+
+                <!-- 2. 편집 영역 (처음엔 숨김) -->
+                <div id="ic-editor" class="controls">
+
+                    <!-- 왼쪽: 옵션 패널 -->
+                    <div class="control-panel">
+                        <span class="panel-title">압축 옵션</span>
+
+                        <div class="input-group">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <label for="ic-quality">화질/압축률 (<span id="ic-q-val"
+                                        style="color:var(--accent); font-weight:700;">80</span>%)</label>
+                            </div>
+                            <input type="range" id="ic-quality" min="0.1" max="1.0" step="0.01" value="0.8">
+                            <div style="font-size:11px; color:#777; margin-top:6px;">낮을수록 용량이 작아지지만 화질이 떨어져요.</div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="ic-format">출력 포맷</label>
+                            <select id="ic-format">
+                                <option value="image/jpeg">JPG (추천 - 고효율)</option>
+                                <option value="image/webp">WEBP (웹 최적화)</option>
+                                <option value="image/png">PNG (투명도 유지, 용량 큼)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="ic-resize">이미지 크기 (너비)</label>
+                            <select id="ic-resize">
+                                <option value="0">원본 크기 유지</option>
+                                <option value="1920">1920px (FHD)</option>
+                                <option value="1280">1280px (HD)</option>
+                                <option value="800">800px (블로그용)</option>
+                                <option value="600">600px (모바일용)</option>
+                                <option value="custom">직접 입력...</option>
+                            </select>
+                            <div id="ic-custom-box" class="custom-width-wrap">
+                                <input type="number" id="ic-width-custom" placeholder="너비 입력 (px)" min="10" max="8000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 오른쪽: 미리보기 및 결과 -->
+                    <div class="preview-area">
+                        <!-- 뷰어 컨트롤 바 -->
+                        <div class="vbar">
+                            <span class="vbar-title">미리보기</span>
+                            <button id="ic-zoom-out" class="vbtn" title="축소">－</button>
+                            <button id="ic-zoom-fit" class="vbtn vbtn-text" title="화면에 맞추기">Fit</button>
+                            <button id="ic-zoom-in" class="vbtn" title="확대">＋</button>
+                            <span id="ic-zoom-val" class="zoom-val">100%</span>
+                        </div>
+
+                        <div class="preview-stage" id="ic-stage">
+                            <img id="ic-preview" class="preview-img" src="" alt="Preview">
+                        </div>
+
+                        <div class="stats">
+                            <div class="stat-item">
+                                <strong>원본 용량</strong>
+                                <span id="ic-orig-size">0KB</span>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-item">
+                                <strong>압축 후</strong>
+                                <span id="ic-new-size" style="color:var(--accent)">0KB</span>
+                                <span id="ic-diff" class="diff"></span>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button id="ic-reset" class="btn btn-secondary">다시 선택</button>
+                            <a id="ic-download" href="#" class="btn btn-primary" download="compressed.jpg">
+                                <div class="spinner" id="ic-spin"></div>
+                                <span>다운로드</span>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Tip 영역 -->
+                <div class="tip-box">
+                    💡 <b>Tip:</b> PNG 이미지는 'JPG'나 'WEBP'로 변환해야 용량이 확실하게 줄어듭니다.<br>
+                    투명 배경이 필요하다면 PNG를 유지하거나 WEBP를 사용하세요.
+                </div>
+
+                <!-- 사용 방법 -->
+                <div class="usage-guide">
+                    <div class="usage-title">🛠️ 사용 방법</div>
+                    <div class="usage-steps">
+                        <div class="usage-step">
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <strong>파일 업로드</strong>
+                                용량을 줄이고 싶은 이미지(JPG, PNG 등)를 드래그하거나 클릭해서 선택하세요.
+                            </div>
+                        </div>
+                        <div class="usage-step">
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <strong>옵션 조절</strong>
+                                화질(압축률)이나 이미지 크기를 조절해 보세요.
+                                <br>미리보기 이미지를 <b>휠 스크롤</b>하여 확대하거나 드래그하여 이동할 수 있습니다.
+                            </div>
+                        </div>
+                        <div class="usage-step">
+                            <div class="step-num">3</div>
+                            <div class="step-content">
+                                <strong>다운로드</strong>
+                                우측 하단의 '다운로드' 버튼을 눌러 결과물을 저장하세요.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const qs = (s) => document.querySelector('#img-compress ' + s);
+
+            // Elements
+            const dropZone = qs('#ic-drop');
+            const fileInput = qs('#ic-input');
+            const editor = qs('#ic-editor');
+
+            const qualityInput = qs('#ic-quality');
+            const qualityVal = qs('#ic-q-val');
+            const formatInput = qs('#ic-format');
+            const resizeInput = qs('#ic-resize');
+            const customWidthBox = qs('#ic-custom-box');
+            const customWidthInput = qs('#ic-width-custom');
+
+            const stage = qs('#ic-stage');
+            const previewImg = qs('#ic-preview');
+            const zoomInBtn = qs('#ic-zoom-in');
+            const zoomOutBtn = qs('#ic-zoom-out');
+            const zoomFitBtn = qs('#ic-zoom-fit');
+            const zoomVal = qs('#ic-zoom-val');
+
+            const origSizeEl = qs('#ic-orig-size');
+            const newSizeEl = qs('#ic-new-size');
+            const diffEl = qs('#ic-diff');
+
+            const downloadBtn = qs('#ic-download');
+            const resetBtn = qs('#ic-reset');
+            const spinner = qs('#ic-spin');
+
+            // State
+            let state = {
+                file: null,
+                img: null,
+                scale: 1,
+                panning: false,
+                startX: 0,
+                startY: 0,
+                transX: 0,
+                transY: 0
+            };
+
+            let debounceTimer = null;
+
+            // --- Event Listeners ---
+
+            // Drag & Drop
+            const setDrag = (on) => dropZone.classList.toggle('drag-over', on);
+            ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); setDrag(true); }));
+            ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); setDrag(false); }));
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                handleFiles(e.dataTransfer.files);
+            });
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+            // Controls
+            qualityInput.addEventListener('input', (e) => {
+                qualityVal.textContent = Math.round(e.target.value * 100);
+                debouncedProcess();
+            });
+
+            formatInput.addEventListener('change', runProcess);
+
+            resizeInput.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    customWidthBox.classList.add('active');
+                    customWidthInput.focus();
+                } else {
+                    customWidthBox.classList.remove('active');
+                    runProcess();
+                }
+            });
+
+            customWidthInput.addEventListener('addEventListener', debouncedProcess);
+            customWidthInput.addEventListener('input', debouncedProcess); // Fixed typo in previous thought, double check implementation
+
+            // Zoom & Pan
+            zoomInBtn.addEventListener('click', () => setZoom(state.scale * 1.2));
+            zoomOutBtn.addEventListener('click', () => setZoom(state.scale / 1.2));
+            zoomFitBtn.addEventListener('click', fitImage);
+
+            stage.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? (1 / 1.1) : 1.1;
+                setZoom(state.scale * delta);
+            }, { passive: false });
+
+            // Pan logic (via CSS transform translate)
+            stage.addEventListener('mousedown', startPan);
+            window.addEventListener('mouseup', endPan);
+            window.addEventListener('mousemove', doPan);
+
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                resetAll();
+            });
+
+            // --- Logic ---
+
+            function resetAll() {
+                state = { file: null, img: null, scale: 1, panning: false, startX: 0, startY: 0, transX: 0, transY: 0 };
+                dropZone.style.display = 'flex';
+                editor.classList.remove('active');
+                fileInput.value = '';
+                previewImg.src = '';
+                previewImg.style.transform = '';
+            }
+
+            async function handleFiles(files) {
+                if (!files.length) return;
+                const file = files[0];
+                if (!file.type.startsWith('image/')) {
+                    alert('이미지 파일만 가능합니다.');
+                    return;
+                }
+
+                state.file = file;
+                origSizeEl.textContent = formatBytes(file.size);
+
+                // Default settings based on file type
+                if (file.type === 'image/png') {
+                    formatInput.value = 'image/jpeg'; // Recommend JPG for PNGs to save space
+                } else {
+                    formatInput.value = file.type; // Keep original
+                }
+
+                // Load image
+                try {
+                    const dataUrl = await readFileAsDataURL(file);
+                    state.img = await loadImage(dataUrl);
+
+                    dropZone.style.display = 'none';
+                    editor.classList.add('active');
+
+                    // Initial process and fit
+                    await processImage();
+                    fitImage();
+
+                } catch (e) {
+                    console.error(e);
+                    alert('이미지를 불러오는데 실패했습니다.');
+                }
+            }
+
+            function debouncedProcess() {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(runProcess, 200);
+            }
+
+            async function runProcess() {
+                if (!state.img) return;
+                await processImage();
+            }
+
+            async function processImage() {
+                downloadBtn.style.opacity = '0.7';
+                spinner.style.display = 'block';
+
+                // Allow UI to update
+                await new Promise(r => requestAnimationFrame(r));
+
+                const canvas = document.createElement('canvas');
+                let { width, height } = state.img;
+
+                // Resize logic
+                let targetWidth = 0;
+                const resizeVal = resizeInput.value;
+                if (resizeVal === 'custom') {
+                    const val = parseInt(customWidthInput.value);
+                    if (val > 0) targetWidth = val;
+                } else {
+                    targetWidth = parseInt(resizeVal);
+                }
+
+                if (targetWidth > 0 && width > targetWidth) {
+                    const ratio = targetWidth / width;
+                    width = targetWidth;
+                    height = height * ratio;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+
+                // Fill white background for JPG (transparency handling)
+                if (formatInput.value === 'image/jpeg') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                ctx.drawImage(state.img, 0, 0, width, height);
+
+                const q = parseFloat(qualityInput.value);
+                const fmt = formatInput.value;
+                const dataUrl = canvas.toDataURL(fmt, q);
+
+                updateResult(dataUrl, fmt);
+            }
+
+            function updateResult(dataUrl, fmt) {
+                // Update preview source
+                previewImg.src = dataUrl;
+
+                // Calculate size
+                const head = 'data:' + fmt + ';base64,';
+                const size = Math.round((dataUrl.length - head.length) * 3 / 4);
+
+                newSizeEl.textContent = formatBytes(size);
+
+                const saved = state.file.size - size;
+                const pct = Math.round((saved / state.file.size) * 100);
+
+                if (saved > 0) {
+                    diffEl.textContent = `(-${pct}%)`;
+                    diffEl.className = 'diff';
+                } else {
+                    diffEl.textContent = `(+${Math.abs(pct)}%)`;
+                    diffEl.className = 'diff bad';
+                }
+
+                // Setup Download
+                const ext = fmt.split('/')[1];
+                const oldName = state.file.name.split('.')[0];
+                downloadBtn.href = dataUrl;
+                downloadBtn.download = `${oldName}_compressed.${ext}`;
+
+                downloadBtn.style.opacity = '1';
+                spinner.style.display = 'none';
+            }
+
+            // --- Zoom/Pan Refs ---
+            function fitImage() {
+                // Auto fit
+                // stage size vs natural size not known easily since previewImg src changes
+                // But we can just reset scale to something reasonable or 1
+                // For a proper fit, we often need the image logic.
+                // Here we will just set scale to 1.0 or calculate based on stage width.
+                if (!previewImg.naturalWidth) return;
+
+                const sw = stage.clientWidth - 40; // padding
+                const sh = stage.clientHeight - 40;
+                const iw = previewImg.naturalWidth;
+                const ih = previewImg.naturalHeight;
+
+                const scaleW = sw / iw;
+                const scaleH = sh / ih;
+                const fit = Math.min(scaleW, scaleH, 1);
+
+                state.transX = 0;
+                state.transY = 0;
+                setZoom(fit);
+            }
+
+            function setZoom(val) {
+                // Limit zoom
+                state.scale = Math.max(0.1, Math.min(val, 5));
+                zoomVal.textContent = Math.round(state.scale * 100) + '%';
+                updateTransform();
+            }
+
+            function startPan(e) {
+                e.preventDefault();
+                state.panning = true;
+                state.startX = e.clientX - state.transX;
+                state.startY = e.clientY - state.transY;
+                previewImg.style.cursor = 'grabbing';
+            }
+
+            function endPan() {
+                state.panning = false;
+                previewImg.style.cursor = 'grab';
+            }
+
+            function doPan(e) {
+                if (!state.panning) return;
+                e.preventDefault();
+                state.transX = e.clientX - state.startX;
+                state.transY = e.clientY - state.startY;
+                updateTransform();
+            }
+
+            function updateTransform() {
+                previewImg.style.transform = `translate(${state.transX}px, ${state.transY}px) scale(${state.scale})`;
+            }
+
+            // --- Utils ---
+            function readFileAsDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = src;
+                });
+            }
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+            }
+        })();
+    </script>
+</div>
