@@ -55,12 +55,19 @@
             font-size: 20px;
             color: var(--text);
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            /* display: flex; -> removed for mobile wrapping */
+            /* align-items: center; */
+            /* gap: 8px; */
+            line-height: 1.5;
         }
 
         #img-compress .badge {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 6px;
+            margin-top: -2px;
+            /* Slight visual adjustment */
+
             font-size: 11px;
             padding: 4px 8px;
             border-radius: 99px;
