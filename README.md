@@ -12,6 +12,7 @@
 | **이미지 용량 줄이기** | [이미지 용량 줄이기](./img-compressor/index.html) | JPG, PNG, WEBP 등 이미지 파일의 용량을 줄여주는 도구입니다. | 📉 용량 압축<br>📏 사용자 지정 리사이즈<br>🔍 줌/팬 미리보기 |
 | **PDF → 이미지 변환** | [`converters/pdf-image/`](./converters/pdf-image/index.html) | PDF의 각 페이지를 이미지(JPG/PNG)로 변환합니다. | 📦 ZIP 압축 다운로드<br>📱 모바일 최적화<br>🔒 보안 (로컬 처리) |
 | **이미지 → PDF 변환** | [`converters/image-pdf/`](./converters/image-pdf/index.html) | 여러 장의 이미지를 하나의 PDF 파일로 병합합니다. | 📑 순서 변경 지원<br>⚡ 빠른 변환 |
+| **PDF 합치기** | [`converters/pdf-merge/`](./converters/pdf-merge/index.html) | 여러 개의 PDF 파일을 하나로 합칩니다. | 📑 순서 변경(Drag)<br>⚡ 대용량 지원(로컬) |
 | **HEIC → JPG 변환** | [`converters/heic → jpg/`](./converters/heic%20→%20jpg/index.html) | 아이폰 사진(HEIC)을 웹용 이미지(JPG)로 변환합니다. | 🍎 아이폰 호환<br>🖼️ 미리보기 지원 |
 | **PNG ↔ JPG 변환** | [`converters/png-jpg/`](./converters/png-jpg/index.html) | PNG와 JPG 포맷을 상호 변환합니다. | 🔄 간편 변환 |
 | **ICO 변환기** | [`converters/ico/`](./converters/ico/index.html) | 이미지를 파비콘(Favicon)용 ICO 파일로 변환합니다. | 🎨 파비콘 제작 |
