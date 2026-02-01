@@ -1,0 +1,1028 @@
+<!-- Global Size Converter Tool (Lumora Style - Refined) -->
+<div id="global-size-converter">
+    <style>
+        #global-size-converter {
+            --bg-main: #1e1e1e;
+            --bg-card: #262626;
+            --bg-input: #2a2a2a;
+            --border: #3a3a3a;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --accent: #a78bfa;
+            /* img-compressor accent */
+            --accent-hover: #c4b5fd;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --radius-card: 16px;
+            --radius-input: 8px;
+            --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            padding: 24px;
+            border-radius: var(--radius-card);
+            max-width: 600px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        #global-size-converter * {
+            box-sizing: border-box;
+        }
+
+        /* Scrollbar Design */
+        #global-size-converter ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        #global-size-converter ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        #global-size-converter ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        #global-size-converter ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Header */
+        #global-size-converter .gsc-header {
+            text-align: center;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        #global-size-converter .gsc-header h2 {
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #global-size-converter .gsc-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 99px;
+            background: rgba(167, 139, 250, 0.15);
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+        }
+
+        #global-size-converter .gsc-header p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tabs */
+        #global-size-converter .gsc-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-input);
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        #global-size-converter .gsc-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        #global-size-converter .gsc-tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        #global-size-converter .gsc-tab-btn.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        #global-size-converter .gsc-content {
+            display: none;
+            animation: gsc-fade-in 0.3s ease;
+        }
+
+        #global-size-converter .gsc-content.active {
+            display: block;
+        }
+
+        @keyframes gsc-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Controls */
+        #global-size-converter .gsc-controls {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius-card);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #global-size-converter .gsc-control-group {
+            margin-bottom: 20px;
+        }
+
+        #global-size-converter .gsc-control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        #global-size-converter .gsc-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* Toggle Button Group */
+        #global-size-converter .gsc-toggle-group {
+            display: flex;
+            background: var(--bg-input);
+            /* #2a2a2a */
+            padding: 4px;
+            border-radius: var(--radius-input);
+            border: 1px solid #444;
+        }
+
+        #global-size-converter .gsc-toggle-option {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        #global-size-converter .gsc-toggle-option.selected {
+            background: #3a3a3a;
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Custom Select */
+        #global-size-converter .gsc-custom-select {
+            position: relative;
+            width: 100%;
+            user-select: none;
+        }
+
+        #global-size-converter .gsc-select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid #444;
+            border-radius: var(--radius-input);
+            padding: 12px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #global-size-converter .gsc-select-trigger:hover {
+            border-color: #666;
+        }
+
+        #global-size-converter .gsc-custom-select.open .gsc-select-trigger {
+            border-color: var(--accent);
+        }
+
+        #global-size-converter .gsc-select-options {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-input);
+            z-index: 100;
+            max-height: 250px;
+            /* Reduced height as requested */
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        #global-size-converter .gsc-custom-select.open .gsc-select-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        #global-size-converter .gsc-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.1s;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #333;
+        }
+
+        #global-size-converter .gsc-option:last-child {
+            border-bottom: none;
+        }
+
+        #global-size-converter .gsc-option:hover {
+            background: #333;
+        }
+
+        #global-size-converter .gsc-option.selected {
+            background: rgba(167, 139, 250, 0.1);
+            /* Accent tint */
+            color: var(--accent);
+        }
+
+        /* Native Input fallback styling */
+        #global-size-converter .gsc-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid #444;
+            border-radius: var(--radius-input);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #global-size-converter .gsc-input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Hide Native Spinners */
+        #global-size-converter input[type=number]::-webkit-inner-spin-button,
+        #global-size-converter input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #global-size-converter input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Slider */
+        #global-size-converter .gsc-slider-container {
+            padding: 14px 0;
+        }
+
+        #global-size-converter .gsc-slider {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        #global-size-converter .gsc-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+
+        #global-size-converter .gsc-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        #global-size-converter .gsc-slider-value {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        /* Results */
+        #global-size-converter .gsc-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+        }
+
+        #global-size-converter .gsc-result-card {
+            background: #2a2a2a;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #444;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        #global-size-converter .gsc-result-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+        }
+
+        #global-size-converter .gsc-result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+            opacity: 0.8;
+        }
+
+        #global-size-converter .gsc-country {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        #global-size-converter .gsc-size {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+
+        /* Tips */
+        #global-size-converter .gsc-tip {
+            margin-top: 20px;
+            padding: 14px;
+            background: rgba(167, 139, 250, 0.05);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        #global-size-converter .gsc-tip p {
+            margin: 0;
+        }
+
+        #global-size-converter .gsc-tip-icon {
+            font-size: 1rem;
+        }
+
+        /* Usage Guide */
+        #global-size-converter .gsc-usage-guide {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        #global-size-converter .gsc-usage-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #global-size-converter .gsc-usage-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #global-size-converter .gsc-usage-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        #global-size-converter .gsc-usage-step:hover {
+            border-color: rgba(167, 139, 250, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        #global-size-converter .gsc-step-num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        #global-size-converter .gsc-step-content {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        #global-size-converter .gsc-step-content strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* Clothing Specific */
+        #global-size-converter .gsc-clothing-section {
+            display: none;
+        }
+
+        #global-size-converter .gsc-clothing-section.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 450px) {
+            #global-size-converter .gsc-size {
+                font-size: 1.3rem;
+            }
+
+            #global-size-converter .gsc-header h2 {
+                font-size: 1.3rem;
+            }
+
+            /* Mobile Tabs Optimization */
+            #global-size-converter .gsc-tabs {
+                gap: 4px;
+                padding: 4px;
+            }
+
+            #global-size-converter .gsc-tab-btn {
+                padding: 8px 4px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+        }
+    </style>
+
+    <div class="gsc-container">
+        <div class="gsc-header">
+            <h2>해외 직구 사이즈 변환기 <span class="gsc-badge">Beta</span></h2>
+            <p>글로벌 사이즈 통합 계산기</p>
+        </div>
+
+        <div class="gsc-tabs">
+            <button class="gsc-tab-btn active" data-tab="shoes">👟 신발</button>
+            <button class="gsc-tab-btn" data-tab="clothing">👕 의류</button>
+            <button class="gsc-tab-btn" data-tab="hats">🧢 모자</button>
+            <button class="gsc-tab-btn" data-tab="rings">💍 반지</button>
+        </div>
+
+        <!-- 👟 SHOES TAB -->
+        <div id="gsc-tab-shoes" class="gsc-content active">
+            <div class="gsc-controls">
+                <div class="gsc-control-group">
+                    <span class="gsc-label">성별 (Gender)</span>
+                    <div class="gsc-toggle-group" id="gsc-shoes-gender">
+                        <div class="gsc-toggle-option selected" data-value="men">남성 (Men)</div>
+                        <div class="gsc-toggle-option" data-value="women">여성 (Women)</div>
+                    </div>
+                </div>
+                <div class="gsc-control-group">
+                    <span class="gsc-label">한국 사이즈 (KR)</span>
+                    <div id="gsc-shoes-select-container"></div> <!-- Custom Select Root -->
+                </div>
+            </div>
+
+            <div class="gsc-results" id="gsc-shoes-results"></div>
+            <div class="gsc-tip">
+                <span class="gsc-tip-icon">💡</span>
+                <p>브랜드마다 미세하게 다를 수 있으며, 이 결과는 '표준(General)' 기준입니다.</p>
+            </div>
+        </div>
+
+        <!-- 👕 CLOTHING TAB -->
+        <div id="gsc-tab-clothing" class="gsc-content">
+            <div class="gsc-controls">
+                <div class="gsc-control-group">
+                    <span class="gsc-label">유형 (Type)</span>
+                    <div class="gsc-toggle-group" id="gsc-clothing-type">
+                        <div class="gsc-toggle-option selected" data-value="top">상의 (Tops)</div>
+                        <div class="gsc-toggle-option" data-value="bottom">하의 (Bottoms)</div>
+                    </div>
+                </div>
+
+                <!-- Tops Input -->
+                <div id="gsc-clothing-top-input" class="gsc-clothing-section active gsc-control-group">
+                    <span class="gsc-label">한국 사이즈 / 호칭</span>
+                    <div id="gsc-top-select-container"></div>
+                </div>
+
+                <!-- Bottoms Input -->
+                <div id="gsc-clothing-bottom-input" class="gsc-clothing-section gsc-control-group">
+                    <span class="gsc-label">허리 사이즈 (Inch)</span>
+                    <div id="gsc-bottom-select-container"></div>
+                </div>
+            </div>
+
+            <div class="gsc-results" id="gsc-clothing-results"></div>
+            <div class="gsc-tip">
+                <span class="gsc-tip-icon">💡</span>
+                <p id="gsc-clothing-tip">미국 옷은 한국보다 한 치수 크게 나오는 경향이 있습니다.</p>
+            </div>
+        </div>
+
+        <!-- 🧢 HATS TAB -->
+        <div id="gsc-tab-hats" class="gsc-content">
+            <div class="gsc-controls">
+                <div class="gsc-control-group">
+                    <span class="gsc-label">머리 둘레 (cm)</span>
+                    <div class="gsc-slider-value" id="gsc-hats-val-display">57.0 cm</div>
+                    <div class="gsc-slider-container">
+                        <input type="range" id="gsc-hats-input" class="gsc-slider" min="55" max="64" step="0.1"
+                            value="57">
+                    </div>
+                </div>
+            </div>
+
+            <div class="gsc-results" id="gsc-hats-results"></div>
+            <div class="gsc-tip">
+                <span class="gsc-tip-icon">💡</span>
+                <p>Fitted Size는 약 1cm 차이마다 1/8씩 커집니다. (뉴에라 기준)</p>
+            </div>
+        </div>
+
+        <!-- 💍 RINGS TAB -->
+        <div id="gsc-tab-rings" class="gsc-content">
+            <div class="gsc-controls">
+                <div class="gsc-control-group">
+                    <span class="gsc-label">손가락 둘레 (mm)</span>
+                    <input type="number" id="gsc-rings-input" class="gsc-input" placeholder="예: 52" min="44" max="70">
+                </div>
+            </div>
+
+            <div class="gsc-results" id="gsc-rings-results"></div>
+            <div class="gsc-tip">
+                <span class="gsc-tip-icon">💡</span>
+                <p>종이로 손가락을 감아 잰 길이를 입력하세요. 한국 호수는 (둘레mm - 43) 근사치입니다.</p>
+            </div>
+        </div>
+
+        <!-- USAGE GUIDE -->
+        <div class="gsc-usage-guide">
+            <div class="gsc-usage-title">🛠️ 사용 방법</div>
+            <div class="gsc-usage-steps">
+                <div class="gsc-usage-step">
+                    <div class="gsc-step-num">1</div>
+                    <div class="gsc-step-content">
+                        <strong>카테고리 선택</strong>
+                        상단의 탭(신발, 의류, 모자, 반지)에서 변환하려는 품목을 선택하세요.
+                    </div>
+                </div>
+                <div class="gsc-usage-step">
+                    <div class="gsc-step-num">2</div>
+                    <div class="gsc-step-content">
+                        <strong>사이즈 입력</strong>
+                        알고 있는 사이즈나 신체 치수를 입력/선택하세요.
+                    </div>
+                </div>
+                <div class="gsc-usage-step">
+                    <div class="gsc-step-num">3</div>
+                    <div class="gsc-step-content">
+                        <strong>결과 확인</strong>
+                        입력 즉시 미국, 유럽, 영국, 한국 등 다양한 국가의 사이즈로 자동 변환됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // --- DATASETS (UPDATED) ---
+            const SHOE_DATA = [
+                { mm: 230, us_m: 5, us_w: 6, uk: 4, eu: 37.5 },
+                { mm: 235, us_m: 5.5, us_w: 6.5, uk: 4.5, eu: 38 },
+                { mm: 240, us_m: 6, us_w: 7, uk: 5, eu: 38.5 },
+                { mm: 245, us_m: 6.5, us_w: 7.5, uk: 5.5, eu: 39 },
+                { mm: 250, us_m: 7, us_w: 8, uk: 6, eu: 40 },
+                { mm: 255, us_m: 7.5, us_w: 8.5, uk: 6.5, eu: 40.5 },
+                { mm: 260, us_m: 8, us_w: 9, uk: 7, eu: 41 },
+                { mm: 265, us_m: 8.5, us_w: 9.5, uk: 7.5, eu: 42 },
+                { mm: 270, us_m: 9, us_w: 10, uk: 8, eu: 42.5 },
+                { mm: 275, us_m: 9.5, us_w: 10.5, uk: 8.5, eu: 43 },
+                { mm: 280, us_m: 10, us_w: 11, uk: 9, eu: 44 },
+                { mm: 290, us_m: 11, us_w: 12, uk: 10, eu: 45 },
+                { mm: 300, us_m: 12, us_w: 13, uk: 11, eu: 46 }
+            ];
+
+            const CLOTH_DATA = {
+                men: [
+                    { kr: '95 (M)', us: 'S', eu: '46' },
+                    { kr: '100 (L)', us: 'M', eu: '48~50' },
+                    { kr: '105 (XL)', us: 'L', eu: '52' },
+                    { kr: '110 (XXL)', us: 'XL', eu: '54' },
+                    { kr: '115 (3XL)', us: 'XXL', eu: '56' }
+                ],
+                women: [
+                    { kr: '44 (XS)', us: '0-2' },
+                    { kr: '55 (S)', us: '4-6' },
+                    { kr: '66 (M)', us: '8-10' },
+                    { kr: '77 (L)', us: '12' },
+                    { kr: '88 (XL)', us: '14' }
+                ]
+            };
+
+            const HAT_DATA = [
+                { cm: 55.8, us: '7', general: 'S' },
+                { cm: 56.8, us: '7 1/8', general: 'M' },
+                { cm: 57.7, us: '7 1/4', general: 'M' },
+                { cm: 58.7, us: '7 3/8', general: 'L' },
+                { cm: 59.6, us: '7 1/2', general: 'L (표준)' },
+                { cm: 60.6, us: '7 5/8', general: 'XL' },
+                { cm: 61.5, us: '7 3/4', general: 'XL' },
+                { cm: 63.5, us: '8', general: 'XXL' }
+            ];
+
+            const RING_DATA = [
+                { mm: 50, ks: '7호', us: '5.5' },
+                { mm: 51, ks: '8호', us: '5.75' },
+                { mm: 52, ks: '9호', us: '6' },
+                { mm: 53, ks: '10호', us: '6.5' },
+                { mm: 54, ks: '11호', us: '6.75' },
+                { mm: 55, ks: '12호', us: '7.25' },
+                { mm: 56, ks: '13호', us: '7.5' },
+                { mm: 57, ks: '14호', us: '8' },
+                { mm: 58, ks: '15호', us: '8.5' },
+                { mm: 60, ks: '17호', us: '9' },
+                { mm: 62, ks: '19호', us: '10' }
+            ];
+
+            // --- DOM ELEMENTS ---
+            const container = document.getElementById('global-size-converter');
+            const tabs = container.querySelectorAll('.gsc-tab-btn');
+            const contents = container.querySelectorAll('.gsc-content');
+
+            // Shoes
+            const shoeGenderOpts = container.querySelectorAll('#gsc-shoes-gender .gsc-toggle-option');
+            const shoeSelectContainer = document.getElementById('gsc-shoes-select-container');
+            const shoeResults = document.getElementById('gsc-shoes-results');
+            const shoeTipText = container.querySelector('#gsc-tab-shoes .gsc-tip p');
+            let currentShoeGender = 'men';
+            let currentShoeSize = 270; // Default mm int
+
+            // Clothing
+            const clothTypeOpts = container.querySelectorAll('#gsc-clothing-type .gsc-toggle-option');
+            const clothTopSection = document.getElementById('gsc-clothing-top-input');
+            const clothBottomSection = document.getElementById('gsc-clothing-bottom-input');
+
+            // Gender for Clothing (Dynamic Insert)
+            // let clothGenderSection = document.getElementById('gsc-clothing-gender-section'); // Removed, will be dynamically created
+
+            const topSelectContainer = document.getElementById('gsc-top-select-container');
+            const bottomSelectContainer = document.getElementById('gsc-bottom-select-container');
+            const clothResults = document.getElementById('gsc-clothing-results');
+            const clothTip = document.getElementById('gsc-clothing-tip');
+
+            let currentClothType = 'top';
+            let currentClothGender = 'men';
+            let currentTopSize = '100 (L)'; // men default
+            let currentTopSizeWomen = '55 (S)'; // women default
+            let currentBottomSize = '30';
+
+            // Hats & Rings
+            const hatInput = document.getElementById('gsc-hats-input');
+            const hatValDisplay = document.getElementById('gsc-hats-val-display');
+            const hatResults = document.getElementById('gsc-hats-results');
+            const ringInput = document.getElementById('gsc-rings-input');
+            const ringResults = document.getElementById('gsc-rings-results');
+
+
+            // --- CUSTOM SELECT IMPLEMENTATION ---
+            function renderCustomSelect(container, options, initialValue, onChange) {
+                container.innerHTML = '';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gsc-custom-select';
+
+                // Find initial label
+                const initialOpt = options.find(o => o.val == initialValue) || options[0];
+                let currentLabel = initialOpt.label;
+
+                // Trigger
+                const trigger = document.createElement('div');
+                trigger.className = 'gsc-select-trigger';
+                trigger.innerHTML = `<span>${currentLabel}</span><span>▼</span>`;
+
+                // Options List
+                const list = document.createElement('div');
+                list.className = 'gsc-select-options';
+
+                options.forEach(opt => {
+                    const el = document.createElement('div');
+                    el.className = 'gsc-option';
+                    if (opt.val == initialValue) el.classList.add('selected');
+                    el.textContent = opt.label;
+                    el.dataset.value = opt.val;
+
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        trigger.querySelector('span').textContent = opt.label;
+                        wrapper.classList.remove('open');
+                        list.querySelectorAll('.gsc-option').forEach(o => o.classList.remove('selected'));
+                        el.classList.add('selected');
+                        onChange(opt.val);
+                    });
+
+                    list.appendChild(el);
+                });
+
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.gsc-custom-select').forEach(s => {
+                        if (s !== wrapper) s.classList.remove('open');
+                    });
+                    wrapper.classList.toggle('open');
+                });
+
+                wrapper.appendChild(trigger);
+                wrapper.appendChild(list);
+                container.appendChild(wrapper);
+            }
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.gsc-custom-select').forEach(s => s.classList.remove('open'));
+            });
+
+
+            // --- INITIALIZATION ---
+            function init() {
+                // Shoes
+                renderShoeSelect();
+                shoeTipText.textContent = "아디다스 등 일부 브랜드는 US 사이즈가 반 치수(0.5) 클 수 있습니다.";
+
+                // Clothing - Inject Gender Toggle
+                initClothingGenderToggle();
+                renderClothingTopSelect();
+
+                // Bottoms
+                const bottomsOpts = [];
+                for (let i = 26; i <= 38; i++) bottomsOpts.push({ val: i, label: i + ' inch' });
+                renderCustomSelect(bottomSelectContainer, bottomsOpts, currentBottomSize, (val) => {
+                    currentBottomSize = val;
+                    updateClothingResults();
+                });
+
+                updateClothingResults();
+
+                // Hats - reset slider range based on new data potentially?
+                // New data range: 55.8 ~ 63.5. 
+                // Slider is 55-64 currently which is fine.
+                updateHatResults();
+            }
+
+            function initClothingGenderToggle() {
+                const parent = document.getElementById('gsc-clothing-type').parentNode; // The Type Group
+
+                // Check if already created
+                if (document.getElementById('gsc-clothing-gender-wrapper')) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.id = 'gsc-clothing-gender-wrapper';
+                wrapper.className = 'gsc-control-group';
+                wrapper.style.display = 'block'; // Default logic
+
+                wrapper.innerHTML = `
+                    <span class="gsc-label">성별 (Gender)</span>
+                    <div class="gsc-toggle-group" id="gsc-clothing-gender">
+                        <div class="gsc-toggle-option selected" data-value="men">남성 (Men)</div>
+                        <div class="gsc-toggle-option" data-value="women">여성 (Women)</div>
+                    </div>
+                `;
+
+                // Insert after Type
+                parent.insertAdjacentElement('afterend', wrapper);
+
+                // Add Events
+                const opts = wrapper.querySelectorAll('.gsc-toggle-option');
+                opts.forEach(opt => {
+                    opt.addEventListener('click', () => {
+                        opts.forEach(o => o.classList.remove('selected'));
+                        opt.classList.add('selected');
+                        currentClothGender = opt.dataset.value;
+                        renderClothingTopSelect();
+                    });
+                });
+            }
+
+
+            // Tab Switch
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    container.querySelector(`#gsc-tab-${tab.dataset.tab}`).classList.add('active');
+                });
+            });
+
+            // --- SHOES LOGIC ---
+            shoeGenderOpts.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    shoeGenderOpts.forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    currentShoeGender = opt.dataset.value;
+                    renderShoeSelect(); // Re-render select to maybe keep size or default
+                });
+            });
+
+            function renderShoeSelect() {
+                // New logic: SHOE_DATA is array.
+                const sizes = SHOE_DATA.map(d => d.mm);
+
+                // Default if not set or not in list
+                if (!currentShoeSize || !sizes.includes(parseInt(currentShoeSize))) {
+                    currentShoeSize = (currentShoeGender === 'men') ? 270 : 240;
+                }
+
+                const options = sizes.map(s => ({ val: s, label: s + ' mm' }));
+
+                renderCustomSelect(shoeSelectContainer, options, currentShoeSize, (val) => {
+                    currentShoeSize = val;
+                    updateShoeResults();
+                });
+                updateShoeResults();
+            }
+
+            function updateShoeResults() {
+                const mm = parseInt(currentShoeSize);
+                const data = SHOE_DATA.find(d => d.mm === mm);
+                if (!data) return;
+
+                const us = (currentShoeGender === 'men') ? data.us_m : data.us_w;
+
+                renderCards(shoeResults, [
+                    { label: '미국 (US)', value: us },
+                    { label: '영국 (UK)', value: data.uk },
+                    { label: '유럽 (EU)', value: data.eu }
+                ]);
+            }
+
+            // --- CLOTHING LOGIC ---
+            clothTypeOpts.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    clothTypeOpts.forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    currentClothType = opt.dataset.value;
+
+                    const genderWrap = document.getElementById('gsc-clothing-gender-wrapper');
+
+                    if (currentClothType === 'top') {
+                        clothTopSection.classList.add('active');
+                        clothBottomSection.classList.remove('active');
+                        if (genderWrap) genderWrap.style.display = 'block';
+                        clothTip.textContent = "미국 옷은 한국보다 한 치수 크게 나오는 경향이 있습니다.";
+                    } else {
+                        clothTopSection.classList.remove('active');
+                        clothBottomSection.classList.add('active');
+                        if (genderWrap) genderWrap.style.display = 'none'; // Hide gender for pants (generic inch)
+                        clothTip.textContent = "1 inch = 2.54 cm 공식을 사용합니다. 브랜드별 실측을 꼭 확인하세요!";
+                    }
+                    updateClothingResults();
+                });
+            });
+
+            function renderClothingTopSelect() {
+                const data = CLOTH_DATA[currentClothGender];
+                const options = data.map(d => ({ val: d.kr, label: d.kr }));
+
+                let val = (currentClothGender === 'men') ? currentTopSize : currentTopSizeWomen;
+                // Validation
+                if (!data.find(d => d.kr === val)) val = data[0].kr;
+
+                renderCustomSelect(topSelectContainer, options, val, (v) => {
+                    if (currentClothGender === 'men') currentTopSize = v;
+                    else currentTopSizeWomen = v;
+                    updateClothingResults();
+                });
+                updateClothingResults();
+            }
+
+            function updateClothingResults() {
+                if (currentClothType === 'top') {
+                    const val = (currentClothGender === 'men') ? currentTopSize : currentTopSizeWomen;
+                    const data = CLOTH_DATA[currentClothGender].find(d => d.kr === val);
+
+                    if (!data) return;
+
+                    const cards = [{ label: '미국 (US)', value: data.us }];
+                    if (data.eu) cards.push({ label: '유럽 (EU)', value: data.eu });
+
+                    renderCards(clothResults, cards);
+                } else {
+                    const i = parseFloat(currentBottomSize);
+                    const cm = (i * 2.54).toFixed(1);
+                    renderCards(clothResults, [
+                        { label: '허리 (inch)', value: i },
+                        { label: '허리 (cm)', value: cm + ' cm' }
+                    ]);
+                }
+            }
+
+            // --- HATS LOGIC ---
+            hatInput.addEventListener('input', (e) => {
+                hatValDisplay.textContent = e.target.value + ' cm';
+                updateHatResults();
+            });
+
+            function updateHatResults() {
+                const cm = parseFloat(hatInput.value);
+                // Closest logic for hats from HAT_DATA
+                // Sort by diff
+                const sorted = [...HAT_DATA].sort((a, b) => Math.abs(a.cm - cm) - Math.abs(b.cm - cm));
+                const match = sorted[0];
+
+                renderCards(hatResults, [
+                    { label: '미국 (Fitted)', value: match.us },
+                    { label: '일반 (Generic)', value: match.general }
+                ]);
+            }
+
+            // --- RINGS LOGIC ---
+            ringInput.addEventListener('input', () => {
+                const mm = parseFloat(ringInput.value);
+                if (!mm || mm < 40 || mm > 80) {
+                    ringResults.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:20px;">치수를 입력해주세요 (44~70mm)</div>';
+                    return;
+                }
+                const sorted = [...RING_DATA].sort((a, b) => Math.abs(a.mm - mm) - Math.abs(b.mm - mm));
+                renderCards(ringResults, [
+                    { label: '한국 호수 (KS)', value: sorted[0].ks },
+                    { label: '미국 호수 (US)', value: sorted[0].us }
+                ]);
+            });
+
+            // --- HELPER ---
+            function renderCards(containerObj, items) {
+                containerObj.innerHTML = '';
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'gsc-result-card';
+                    card.innerHTML = `
+                        <span class="gsc-country">${item.label}</span>
+                        <span class="gsc-size">${item.value}</span>
+                    `;
+                    containerObj.appendChild(card);
+                });
+            }
+
+            // Boot
+            init();
+
+        })();
+    </script>
+</div>
