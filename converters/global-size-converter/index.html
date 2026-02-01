@@ -89,36 +89,43 @@
 
         /* Tabs */
         #global-size-converter .gsc-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            background: var(--bg-input);
-            padding: 6px;
-            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin-bottom: 16px;
+            background: #1a1a1a;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
         }
 
         #global-size-converter .gsc-tab-btn {
-            flex: 1;
             background: transparent;
             border: none;
             color: var(--text-secondary);
-            padding: 10px;
+            padding: 10px 4px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.95rem;
             transition: all 0.2s ease;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         #global-size-converter .gsc-tab-btn:hover {
             color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         #global-size-converter .gsc-tab-btn.active {
             background: var(--bg-card);
-            color: var(--text-primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            font-weight: 600;
+            color: var(--accent);
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(167, 139, 250, 0.3);
         }
 
         /* Content Area */
