@@ -4,9 +4,9 @@
   - 스타일 범위: #pdf-merge ID 내부로 한정
 -->
 <div id="pdf-merge">
-    <!-- External Libraries -->
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <!-- External Libraries (Pinned Version for Stability & Enterprise Friendly CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 
     <style>
         /* ====== 스타일 격리 (Scoped CSS) ====== */
@@ -174,6 +174,8 @@
             gap: 12px;
             cursor: grab;
             transition: background 0.2s;
+            touch-action: none;
+            /* Critical for mobile drag */
         }
 
         #pdf-merge .file-item:hover {
@@ -455,8 +457,13 @@
             }
 
             #pdf-merge .file-name {
-                max-width: 200px;
-                /* Force ellipsis on small screens */
+                white-space: normal;
+                /* Allow text wrapping */
+                overflow: visible;
+                text-overflow: clip;
+                word-break: break-all;
+                /* Break long words */
+                max-width: 100%;
             }
         }
     </style>
@@ -545,7 +552,14 @@
     <script>
         (function () {
             const qs = (s) => document.querySelector('#pdf-merge ' + s);
-            const { PDFDocument } = PDFLib;
+
+            // Safe access to PDFLib
+            const getPDFLib = () => {
+                if (typeof PDFLib === 'undefined') {
+                    throw new Error('PDFLib 라이브러리가 로드되지 않았습니다. 인터넷 연결이나 CDN 상태를 확인해 주세요.');
+                }
+                return PDFLib;
+            };
 
             // Elements
             const dropZone = qs('#pm-drop');
@@ -564,6 +578,10 @@
 
             // --- Event Listeners ---
 
+            // Reset and Merge buttons
+            resetBtn.addEventListener('click', clearAll);
+            mergeBtn.addEventListener('click', mergePDFs);
+
             // Drag & Drop
             const setDrag = (on) => dropZone.classList.toggle('drag-over', on);
             ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); setDrag(true); }));
@@ -581,38 +599,49 @@
                 fileInput.value = ''; // Reset for re-selection
             });
 
-            // Initialize Sortable
-            new Sortable(fileListEl, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                handle: '.file-item', // Drag whole item
-                onEnd: () => {
-                    // 순서가 시각적으로 바뀌었으므로, fileQueue 내부 순서도 동기화해야 함
-                    // DOM 순서대로 재정렬
-                    const newOrder = [];
-                    const items = fileListEl.querySelectorAll('.file-item[data-index]');
-                    items.forEach(item => {
-                        const index = parseFloat(item.dataset.index); // ID uses mostly float from Math.random
-                        const file = fileQueue.find(f => f._id === index);
-                        if (file) newOrder.push(file);
+            // Initialize Sortable safely
+            try {
+                if (typeof Sortable !== 'undefined') {
+                    new Sortable(fileListEl, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        // Removed handle restriction for easier usage
+                        filter: '.add-more, .btn-remove, .btn-remove *', // Ignore interactions on buttons
+                        preventOnFilter: false, // Allow button clicks
+
+                        onStart: () => console.log('Sortable: Drag started'),
+                        onEnd: () => {
+                            console.log('Sortable: Drag ended');
+                            const newOrder = [];
+                            const items = fileListEl.querySelectorAll('.file-item:not(.add-more)');
+                            items.forEach(item => {
+                                const id = item.dataset.index;
+                                const file = fileQueue.find(f => String(f._id) === id);
+                                if (file) newOrder.push(file);
+                            });
+                            fileQueue = newOrder;
+                            renderList();
+                            updateStats();
+                        }
                     });
-
-                    fileQueue = newOrder;
-                    // 순서 번호 업데이트를 위해 다시 렌더링
-                    renderList();
+                } else {
+                    console.warn('SortableJS 라이브러리가 로드되지 않아 순서 변경 기능을 사용할 수 없습니다.');
                 }
-            });
-
-            resetBtn.addEventListener('click', clearAll);
-            mergeBtn.addEventListener('click', mergePDFs);
+            } catch (e) {
+                console.error('Sortable initialization failed:', e);
+            }
 
             // --- Logic ---
 
             function addFiles(files) {
                 if (!files || files.length === 0) return;
 
-                // Convert FileList to Array and filter PDF
-                const newFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+                // Convert FileList to Array and filter PDF (Type or Extension)
+                const newFiles = Array.from(files).filter(f => {
+                    const isPdfType = f.type === 'application/pdf';
+                    const isPdfExt = f.name.toLowerCase().endsWith('.pdf');
+                    return isPdfType || isPdfExt;
+                });
 
                 if (newFiles.length === 0) {
                     alert('PDF 파일만 선택해주세요.');
@@ -620,7 +649,7 @@
                 }
 
                 // Assign unique ID for tracking
-                newFiles.forEach(f => f._id = Date.now() + Math.random());
+                newFiles.forEach(f => f._id = 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
 
                 fileQueue = [...fileQueue, ...newFiles];
                 updateUI();
@@ -693,7 +722,7 @@
                 // Add button item
                 if (fileQueue.length > 0) {
                     const addLi = document.createElement('li');
-                    addLi.className = 'file-item';
+                    addLi.className = 'file-item add-more';
                     addLi.style.justifyContent = 'center';
                     addLi.style.cursor = 'pointer';
                     addLi.style.borderStyle = 'dashed';
@@ -720,26 +749,40 @@
             }
 
             async function mergePDFs() {
-                if (fileQueue.length < 2) return;
+                if (fileQueue.length < 2) {
+                    alert('최소 2개의 PDF 파일이 필요합니다.');
+                    return;
+                }
 
                 setLoading(true);
 
                 try {
+                    const lib = getPDFLib();
+                    const { PDFDocument } = lib;
+
+                    console.log('PDF 합치기 시작...', fileQueue.length, '개 파일');
                     const mergedPdf = await PDFDocument.create();
 
-                    for (const file of fileQueue) {
+                    for (let i = 0; i < fileQueue.length; i++) {
+                        const file = fileQueue[i];
+                        console.log(`파일 처리 중 (${i + 1}/${fileQueue.length}):`, file.name);
+
                         const arrayBuffer = await file.arrayBuffer();
-                        const pdf = await PDFDocument.load(arrayBuffer);
+                        const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
                         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
                         copiedPages.forEach((page) => mergedPdf.addPage(page));
                     }
 
+                    console.log('PDF 파일 저장 중...');
                     const pdfBytes = await mergedPdf.save();
+
+                    console.log('다운로드 시작...');
                     downloadBlob(pdfBytes, 'merged_files.pdf', 'application/pdf');
+                    console.log('완료!');
 
                 } catch (err) {
-                    console.error(err);
-                    alert('PDF 합치기 중 오류가 발생했습니다. 파일이 손상되었거나 암호가 걸려있을 수 있습니다.');
+                    console.error('PDF Merge Error:', err);
+                    alert('PDF 합치기 중 오류가 발생했습니다: ' + err.message);
                 } finally {
                     setLoading(false);
                 }
@@ -758,11 +801,16 @@
             function downloadBlob(data, fileName, mimeType) {
                 const blob = new Blob([data], { type: mimeType });
                 const url = window.URL.createObjectURL(blob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = url;
-                downloadLink.download = fileName;
-                downloadLink.click();
-                window.URL.revokeObjectURL(url);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
             }
 
             function formatSize(bytes) {
