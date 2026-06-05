@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스마트 모바일 운동 캔버스 | Lumora Tools</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #1e1e1e; /* Lumora Dark Gray */
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Tap active feedback */
+        .btn-tap {
+            transition: transform 0.1s ease, background-color 0.1s ease;
+        }
+        .btn-tap:active {
+            transform: scale(0.96);
+        }
+        
+        /* Custom scrollbar for settings list */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col pb-12">
+
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-40 bg-[#1e1e1e]/95 backdrop-blur-md border-b border-[#3a3a3a]/60 px-4 py-4">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center text-[#1e1e1e] font-extrabold text-lg shadow-md shadow-[#a78bfa]/20">
+                        L
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#a78bfa] border-2 border-[#1e1e1e] rounded-full"></span>
+                </div>
+                <div>
+                    <h1 class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Lumora Workout</h1>
+                    <p class="text-sm font-black text-white tracking-tight">스마트 모바일 운동 캔버스</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-1.5">
+                <!-- Smart Screen Status Indicator (Wake Lock) -->
+                <button onclick="triggerWakeLockAction()" id="wake-lock-indicator" class="btn-tap px-2.5 py-1.5 bg-[#a78bfa]/10 border border-[#a78bfa]/20 rounded-xl text-[10px] font-bold text-[#a78bfa] flex items-center gap-1 transition-all">
+                    <i id="wake-lock-icon" data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+                    <span id="wake-lock-text">제한됨 (미리보기)</span>
+                </button>
+
+                <!-- Routine Settings (Visible Days Toggle) -->
+                <button onclick="openSettingsModal()" class="btn-tap px-2 py-1.5 bg-[#262626] border border-[#3a3a3a] rounded-xl text-[10px] font-bold text-slate-400 flex items-center gap-1" title="루틴 설정 및 요일 활성화">
+                    <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+
+                <!-- Data Backup & Restore Trigger -->
+                <button onclick="openBackupModal()" class="btn-tap px-2 py-1.5 bg-[#262626] border border-[#3a3a3a] rounded-xl text-[10px] font-bold text-slate-400 flex items-center gap-1" title="기록 백업/복원">
+                    <i data-lucide="database" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+
+                <!-- Injury Prevention Specs -->
+                <button onclick="openSpecModal()" class="btn-tap px-2 py-1.5 bg-[#262626] border border-[#3a3a3a] rounded-xl text-[10px] font-bold text-slate-400 flex items-center gap-1" title="부상 방지 가이드">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="max-w-md w-full mx-auto px-4 mt-3">
+        <div class="bg-gradient-to-r from-[#a78bfa]/10 to-[#262626] border border-[#a78bfa]/30 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center shrink-0">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-white">화면이 계속 켜져있는 "진짜 앱" 설치</h4>
+                    <p class="text-[10px] text-slate-400 mt-0.5">홈 화면에 추가하면 화면 유지 기능이 활성화됩니다!</p>
+                </div>
+            </div>
+            <button onclick="openInstallModal()" class="btn-tap px-3 py-2 bg-[#a78bfa] hover:bg-[#c4b5fd] text-[#1e1e1e] font-black text-xs rounded-xl shadow-md">
+                1초 설치
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Flow -->
+    <main class="flex-1 max-w-md w-full mx-auto px-4 mt-4 space-y-4">
+        
+        <!-- Segmented Tab Bar -->
+        <div id="visible-days-tabs" class="bg-[#262626] p-1.5 rounded-2xl border border-[#3a3a3a]/80 flex flex-wrap justify-between gap-1 shadow-lg">
+            <!-- Dynamic tab buttons will be injected here -->
+        </div>
+
+        <!-- Coach Directive Panel (Workout Tips) -->
+        <div class="bg-gradient-to-b from-[#2d2d2d] to-[#262626] border border-[#3a3a3a]/80 rounded-2xl p-4 shadow-md flex items-start space-x-3.5">
+            <div class="w-8 h-8 rounded-xl bg-[#a78bfa]/10 flex items-center justify-center text-[#a78bfa] shrink-0 mt-0.5">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+                <span class="text-[9px] font-extrabold text-[#a78bfa] tracking-wider uppercase">오늘의 트레이닝 가이드</span>
+                <p id="gems-directive" class="text-xs text-slate-300 leading-relaxed font-semibold">
+                    코칭 가이드를 불러오는 중입니다...
+                </p>
+            </div>
+        </div>
+
+        <!-- Routine Metadata -->
+        <div class="flex items-center justify-between px-1">
+            <div class="space-y-0.5">
+                <div class="flex items-center space-x-2">
+                    <h2 id="routine-main-title" class="text-base font-extrabold text-white tracking-tight">루틴 로드 중...</h2>
+                    <button onclick="openRoutineModal()" class="btn-tap p-1 bg-[#262626] hover:bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg text-slate-400 hover:text-white" title="루틴 정보 수정">
+                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <p id="routine-sub-title" class="text-xs text-slate-400">서브 타이틀 로드 중</p>
+            </div>
+            <div class="bg-[#262626] px-3 py-1.5 rounded-xl border border-[#3a3a3a] text-right">
+                <span class="text-[9px] text-slate-500 font-extrabold block uppercase tracking-wider">세션 진척도</span>
+                <span id="progress-percent" class="text-xs font-black text-[#a78bfa]">0%</span>
+            </div>
+        </div>
+
+        <!-- Dynamic Workouts Holder -->
+        <div id="exercise-list" class="space-y-4">
+            <!-- Dynamic Cards Loaded Here -->
+        </div>
+
+        <!-- Add Workout Exercise Button -->
+        <button onclick="openExerciseModal(null)" class="btn-tap w-full py-3.5 bg-[#262626] hover:bg-[#2d2d2d] border border-[#3a3a3a] text-[#a78bfa] font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-sm text-xs">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>새로운 운동 추가하기</span>
+        </button>
+
+        <!-- Elegant In-Flow Copy Control -->
+        <div class="pt-6 pb-8 border-t border-[#3a3a3a]/80">
+            <button onclick="copyRoutineResults()" class="btn-tap w-full py-4 bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] text-[#1e1e1e] font-black rounded-2xl flex items-center justify-center space-x-2 shadow-lg shadow-[#a78bfa]/10 text-sm">
+                <i data-lucide="check-check" class="w-5 h-5"></i>
+                <span>오늘 운동 완료하고 기록 복사하기</span>
+            </button>
+            <p class="text-center text-[11px] text-slate-500 mt-3 font-medium">
+                작성한 세션 데이터가 텍스트 형식으로 자동 복사됩니다.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Sleek Custom Toast -->
+    <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 border border-[#a78bfa]/30 text-white font-extrabold px-6 py-4 rounded-2xl text-xs shadow-2xl opacity-0 scale-95 pointer-events-none transition-all duration-300 z-50 flex items-center gap-3">
+        <div class="w-5 h-5 rounded-full bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center">
+            <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+        </div>
+        <span id="toast-text">기록이 복사되었습니다!</span>
+    </div>
+
+    <!-- Routine Metadata Edit Modal -->
+    <div id="routine-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeRoutineModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center">
+                    <i data-lucide="edit-3" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white">루틴 정보 수정</h3>
+                    <p class="text-[10px] text-slate-400">해당 요일의 메인 루틴 정보 및 가이드를 변경합니다</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">탭 표시 이름 (Tab Label)</label>
+                    <input type="text" id="edit-routine-tablabel" placeholder="예: 월 (당기기)" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">루틴 메인 타이틀</label>
+                    <input type="text" id="edit-routine-title" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">루틴 부제목 (요약 가이드)</label>
+                    <input type="text" id="edit-routine-subtitle" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">오늘의 트레이닝 가이드 메시지</label>
+                    <textarea id="edit-routine-directive" rows="3" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa] resize-none"></textarea>
+                </div>
+                
+                <button onclick="saveRoutineInfo()" class="btn-tap w-full py-3 bg-[#a78bfa] hover:bg-[#c4b5fd] text-[#1e1e1e] font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>수정 사항 저장</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Add/Edit Modal -->
+    <div id="exercise-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeExerciseModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center">
+                    <i id="exercise-modal-icon" data-lucide="plus-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 id="exercise-modal-title" class="text-sm font-black text-white">새로운 운동 추가</h3>
+                    <p class="text-[10px] text-slate-400">현재 요일에 새로운 운동을 설정합니다</p>
+                </div>
+            </div>
+            
+            <input type="hidden" id="edit-exercise-id">
+            
+            <div class="space-y-3.5 max-h-96 overflow-y-auto pr-1">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">운동명</label>
+                    <input type="text" id="edit-ex-name" placeholder="예: 시티드 로우" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1.5">
+                         <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">카테고리</label>
+                         <select id="edit-ex-category" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-2 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                             <option value="등">등</option>
+                             <option value="가슴">가슴</option>
+                             <option value="하체">하체</option>
+                             <option value="어깨">어깨</option>
+                             <option value="이두">이두</option>
+                             <option value="삼두">삼두</option>
+                             <option value="코어">코어</option>
+                             <option value="웜업">웜업</option>
+                             <option value="유산소">유산소</option>
+                         </select>
+                     </div>
+                     <div class="space-y-1.5">
+                         <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">세트 수</label>
+                         <select id="edit-ex-sets-count" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-2 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                             <option value="1">1세트</option>
+                             <option value="2">2세트</option>
+                             <option value="3" selected>3세트</option>
+                             <option value="4">4세트</option>
+                             <option value="5">5세트</option>
+                             <option value="6">6세트</option>
+                         </select>
+                     </div>
+                </div>
+
+                <div class="space-y-1.5">
+                     <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">운동 특성</label>
+                     <div class="grid grid-cols-3 gap-2">
+                         <label class="flex items-center justify-center p-2 bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl cursor-pointer select-none">
+                             <input type="radio" name="ex-type" id="ex-type-normal" value="normal" checked class="hidden">
+                             <span id="label-type-normal" class="text-[10px] font-bold text-slate-400">일반</span>
+                         </label>
+                         <label class="flex items-center justify-center p-2 bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl cursor-pointer select-none">
+                             <input type="radio" name="ex-type" id="ex-type-bodyweight" value="bodyweight" class="hidden">
+                             <span id="label-type-bodyweight" class="text-[10px] font-bold text-slate-400">맨몸</span>
+                         </label>
+                         <label class="flex items-center justify-center p-2 bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl cursor-pointer select-none">
+                             <input type="radio" name="ex-type" id="ex-type-cardio" value="cardio" class="hidden">
+                             <span id="label-type-cardio" class="text-[10px] font-bold text-slate-400">유산소/웜업</span>
+                         </label>
+                     </div>
+                 </div>
+                 
+                 <div id="ex-values-group" class="grid grid-cols-2 gap-2">
+                     <div id="ex-weight-field" class="space-y-1.5">
+                         <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">기본 중량 (kg)</label>
+                         <input type="number" id="edit-ex-weight" value="30" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                     </div>
+                     <div id="ex-reps-field" class="space-y-1.5">
+                         <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">기본 횟수 (reps)</label>
+                         <input type="number" id="edit-ex-reps" value="12" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                     </div>
+                 </div>
+
+                 <div id="ex-duration-group" class="space-y-1.5 hidden">
+                     <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">기본 시간 (분)</label>
+                     <input type="number" id="edit-ex-duration" value="10" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                 </div>
+                 
+                 <div class="space-y-1.5">
+                     <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">운동 목표 가이드 문구</label>
+                     <input type="text" id="edit-ex-target" placeholder="예: 30kg x 12회 또는 10분 빠른 걷기" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                 </div>
+
+                 <div class="space-y-1.5">
+                     <label class="text-[10px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">운동 팁 (요약)</label>
+                     <input type="text" id="edit-ex-tip" placeholder="예: 무릎 방향 정렬 엄수" class="w-full bg-[#1e1e1e] border border-[#3a3a3a] text-xs text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#a78bfa]">
+                 </div>
+             </div>
+             
+             <button onclick="saveExercise()" class="btn-tap w-full py-3 bg-[#a78bfa] hover:bg-[#c4b5fd] text-[#1e1e1e] font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+                 <i data-lucide="check" class="w-4 h-4"></i>
+                 <span>저장하기</span>
+             </button>
+         </div>
+     </div>
+
+     <!-- Settings Modal (Visible Days Toggle) -->
+     <div id="settings-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeSettingsModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white">대시보드 요일 설정</h3>
+                    <p class="text-[10px] text-slate-400">탭에 노출할 요일을 선택하여 루틴을 커스텀하세요</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <p class="text-[11px] text-slate-400 font-semibold">최소 1개 이상의 요일은 선택되어야 합니다.</p>
+                
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">월요일</span>
+                        <input type="checkbox" value="mon" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">화요일</span>
+                        <input type="checkbox" value="tue" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">수요일</span>
+                        <input type="checkbox" value="wed" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">목요일</span>
+                        <input type="checkbox" value="thu" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">금요일</span>
+                        <input type="checkbox" value="fri" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">토요일</span>
+                        <input type="checkbox" value="sat" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                    <label class="flex items-center justify-between p-3 bg-[#1e1e1e] hover:bg-[#2a2a2a] border border-[#3a3a3a] rounded-2xl cursor-pointer transition">
+                        <span class="text-xs font-semibold text-slate-200">일요일</span>
+                        <input type="checkbox" value="sun" class="day-toggle-checkbox w-4 h-4 accent-[#a78bfa]">
+                    </label>
+                </div>
+                
+                <button onclick="applyVisibleDays()" class="btn-tap w-full py-3 bg-[#a78bfa] hover:bg-[#c4b5fd] text-[#1e1e1e] font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>설정 적용하기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup & Restore Modal -->
+    <div id="backup-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeBackupModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-[#a78bfa]/10 text-[#a78bfa] flex items-center justify-center">
+                    <i data-lucide="database" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white">루틴 데이터 백업 & 복원</h3>
+                    <p class="text-[10px] text-slate-400">새로고침이 되어도 안전하게 나의 루틴을 지키세요</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Export Segment -->
+                <div class="space-y-2">
+                    <label class="text-[11px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">현재 루틴 백업 코드 생성</label>
+                    <p class="text-[10px] text-slate-400">아래 보안 코드를 복사해 메모장에 저장하거나 기기를 변경할 때 사용하세요.</p>
+                    <div class="relative mt-1">
+                        <textarea id="export-code-area" readonly class="w-full h-16 bg-[#1e1e1e] border border-[#3a3a3a] text-[10px] text-slate-400 rounded-xl p-2.5 focus:outline-none resize-none font-mono break-all"></textarea>
+                        <button onclick="copyBackupCode()" class="btn-tap absolute right-2 bottom-2 px-2.5 py-1.5 bg-[#a78bfa] text-[#1e1e1e] font-extrabold text-[10px] rounded-lg shadow-md flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> 코드 복사
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Import Segment -->
+                <div class="space-y-2 border-t border-[#3a3a3a] pt-4">
+                    <label class="text-[11px] font-extrabold text-[#a78bfa] tracking-wider uppercase block">보안 코드로 기록 복원</label>
+                    <p class="text-[10px] text-slate-400">복사해 둔 코드를 붙여넣으면 진행 데이터가 즉시 완벽 복원됩니다.</p>
+                    <textarea id="import-code-area" placeholder="여기에 백업 보안 코드를 붙여넣으세요..." class="w-full h-16 mt-1 bg-[#1e1e1e] border border-[#3a3a3a] text-[10px] text-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-[#a78bfa] resize-none font-mono break-all"></textarea>
+                    <button onclick="importBackupCode()" class="btn-tap w-full py-2.5 bg-[#a78bfa] hover:bg-[#c4b5fd] text-[#1e1e1e] font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>기록 동기화 및 복원 적용</span>
+                    </button>
+                </div>
+
+                <!-- Safe Smart Wipe Reset Button -->
+                <div class="text-center pt-2 border-t border-[#3a3a3a]">
+                    <button id="reset-data-btn" onclick="resetAllData()" class="btn-tap text-[10px] text-rose-500 hover:text-rose-400 font-extrabold underline transition">
+                        현재 브라우저 기록 전체 초기화하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Injury Risk Modal -->
+    <div id="spec-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeSpecModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white">웨이트 트레이닝 부상 방지 가이드</h3>
+                    <p class="text-[10px] text-slate-400">안전하고 정교한 자극 전달을 위한 가이드</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="p-3.5 bg-slate-950/50 rounded-2xl border border-[#3a3a3a] flex items-start gap-3">
+                    <span class="px-2 py-0.5 bg-rose-500/10 text-rose-400 font-extrabold text-[10px] rounded border border-rose-500/20 mt-0.5">손목 보호</span>
+                    <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">프레스 동작 시 엄지 아랫부분의 뼈(척골 라인)에 무거운 바를 얹어 고정하는 **'불독 그립'**을 사용하여 손목이 뒤로 꺾여 생기는 손상을 방지합니다.</p>
+                </div>
+                <div class="p-3.5 bg-slate-950/50 rounded-2xl border border-[#3a3a3a] flex items-start gap-3">
+                    <span class="px-2 py-0.5 bg-amber-500/10 text-amber-400 font-extrabold text-[10px] rounded border border-amber-500/20 mt-0.5">무릎 제어</span>
+                    <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">스쿼트, 레그 프레스 시 발끝 방향과 무릎이 나아가는 궤적을 반드시 평행하게 유지합니다. 발가락이 안쪽으로 모이거나 무릎이 모이지 않게 주의하세요.</p>
+                </div>
+                <div class="p-3.5 bg-slate-950/50 rounded-2xl border border-[#3a3a3a] flex items-start gap-3">
+                    <span class="px-2 py-0.5 bg-teal-500/10 text-teal-400 font-extrabold text-[10px] rounded border border-teal-500/20 mt-0.5">어깨 안정</span>
+                    <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">레이즈 및 상체 밀기 동작 시 팔을 완전히 180도 옆으로 벌리지 않고, 몸통 전면으로 약 30도 앞(견갑면 궤적)으로 향하여 충돌 증후군을 예방하세요.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Guide Modal -->
+    <div id="pwa-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-[#262626] border border-[#3a3a3a] w-full max-w-sm rounded-3xl p-6 space-y-5 relative shadow-2xl">
+            <button onclick="closeInstallModal()" class="absolute top-5 right-5 p-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-xl text-slate-300 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 border-b border-[#3a3a3a] pb-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="smartphone" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-white">홈 화면 설치 가이드</h3>
+                    <p class="text-[10px] text-slate-400">설치해서 사용하면 절전 모드가 자동 방지됩니다!</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div id="android-instructions" class="space-y-2.5">
+                    <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 font-extrabold text-[11px] rounded-lg border border-emerald-500/20 inline-block">갤럭시 / 안드로이드</span>
+                    <ol class="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1 font-semibold leading-relaxed">
+                        <li>인터넷 주소창 우측 상단의 <span class="text-white font-bold">더보기(점 3개)</span> 또는 공유 버튼을 터치합니다.</li>
+                        <li>메뉴 리스트에서 <span class="text-emerald-400 font-bold">"홈 화면에 추가"</span> 또는 <span class="text-emerald-400 font-bold">"앱 설치"</span>를 누르면 완료!</li>
+                    </ol>
+                </div>
+                
+                <div id="ios-instructions" class="space-y-2.5 border-t border-[#3a3a3a] pt-4">
+                    <span class="px-2.5 py-1 bg-teal-500/10 text-teal-400 font-extrabold text-[11px] rounded-lg border border-teal-500/20 inline-block">아이폰 / iOS</span>
+                    <ol class="text-xs text-slate-300 space-y-2 list-decimal list-inside pl-1 font-semibold leading-relaxed">
+                        <li>사파리(Safari) 브라우저 하단의 <span class="text-white font-bold">공유 버튼(내보내기 모양)</span>을 터치합니다.</li>
+                        <li>리스트를 내리다 보면 나타나는 <span class="text-emerald-400 font-bold">"홈 화면에 추가"</span>를 눌러주면 완료!</li>
+                    </ol>
+                </div>
+
+                <div class="p-3 bg-slate-950/50 rounded-2xl border border-[#3a3a3a]">
+                    <p class="text-[10px] text-slate-400 leading-relaxed font-medium">
+                        ※ 카카오톡, 네이버, 인앱 브라우저 등으로 이 창을 보고 계신가요? <br>
+                        우측 하단이나 상단 메뉴의 <span class="text-white font-bold">"기본 브라우저(Chrome/Safari)로 열기"</span>를 한 다음, 위의 순서대로 홈 화면에 설치해 주세요!
+                    </p>
+                </div>
+
+                <button onclick="triggerProgrammaticPwa()" id="btn-pwa-programmatic" class="hidden w-full py-3 bg-[#a78bfa] text-[#1e1e1e] font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>지금 즉시 앱 설치 실행하기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Engine -->
+    <script>
+        const database = {
+            mon: {
+                tabLabel: "월 (당기기)",
+                mainTitle: "월요일: 당기기 (등 & 이두)",
+                subTitle: "광배근 주력 타격 및 전면 코어 활성",
+                directive: "상승 다이어트와 탄탄한 뒤태를 위해 척추 라인 프레임을 고르게 발달시키는 날입니다. 팔 힘이 아닌 팔꿈치 각도로 깊게 당겨주고 수축 끝자락을 컨트롤하세요.",
+                items: [
+                    { id: "mon-0", name: "가벼운 전신 사이클 (웜업)", category: "웜업", target: "중저강도 심박수 유도 10분", isWarmup: true, duration: 10, note: "", tip: "전신 윤활 가속" },
+                    { id: "mon-1", name: "시티드 로우 (Seated Row)", category: "등", target: "35kg x 12회", weight: 35, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "팔꿈치 각도를 모아 깊게 수축" },
+                    { id: "mon-2", name: "랫풀다운 (Lat Pulldown)", category: "등", target: "30kg x 12회", weight: 30, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "날개뼈를 단단히 내려 모아주기" },
+                    { id: "mon-3", name: "케이블 바이셉스 컬", category: "이두", target: "15kg x 12회", weight: 15, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "팔꿈치를 몸통에 밀착하여 제어" },
+                    { id: "mon-4", name: "AB 휠 (AB Wheel)", category: "코어", target: "맨몸 x 12회", isBodyweight: true, weight: 0, reps: 12, step: 1, sets: [null, null, null], note: "", tip: "복근의 수축 저항에 완전히 몰입" }
+                ]
+            },
+            tue: {
+                tabLabel: "화 (밀기)",
+                mainTitle: "화요일: 밀기 (가슴 & 어깨 & 삼두)",
+                subTitle: "점진적 과부하 프로그램 및 관절 안전 궤적 확보",
+                directive: "밀어내는 주동근을 단련하고 탄탄한 가슴 라인을 구축하는 날입니다. 숄더 및 체스트 동작 시 어깨가 들리지 않도록 견갑을 하강 고정하세요.",
+                items: [
+                    { id: "tue-0", name: "상체 스트레칭 & 어깨 회전근 (웜업)", category: "웜업", target: "동적 가동성 스트레칭 5분", isWarmup: true, duration: 5, note: "", tip: "부상 예방 및 가동성" },
+                    { id: "tue-1", name: "체스트 프레스 머신", category: "가슴", target: "30kg x 12회", weight: 30, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "바를 밀 때 불독 그립 엄수" },
+                    { id: "tue-2", name: "펙 덱 플라이 머신", category: "가슴", target: "10kg x 12회", weight: 10, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "가슴 안쪽 모아주기에 힘쓰기" },
+                    { id: "tue-3", name: "숄더 프레스 머신", category: "어깨", target: "15kg x 12회", weight: 15, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "견갑면 각도로 손잡이 조율" },
+                    { id: "tue-4", name: "사이드 레터럴 레이즈", category: "어깨", target: "4kg x 15회", weight: 4, reps: 15, step: 0.5, sets: [null, null, null], note: "", tip: "승모근 반동 최소화" },
+                    { id: "tue-5", name: "케이블 푸시다운 (로프)", category: "삼두", target: "15kg x 12회", weight: 15, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "삼두근 자극 최고조 도달" }
+                ]
+            },
+            wed: {
+                tabLabel: "수 (하체)",
+                mainTitle: "수요일: 하체 (대퇴사두 & 둔근)",
+                subTitle: "무릎 안정성 확보 및 대퇴 후면 조율",
+                directive: "신체에서 가장 큰 근육군인 하체 트레이닝의 메인 세션입니다. 둔근과 허벅지 후면에 자극을 확실하게 걸어 진행하세요.",
+                items: [
+                    { id: "wed-0", name: "평지 가벼운 걷기 (웜업)", category: "웜업", target: "가벼운 템포 걷기 10분", isWarmup: true, duration: 10, note: "", tip: "하체 관절 부드럽게 풀기" },
+                    { id: "wed-1", name: "힙 업덕션 머신", category: "하체", target: "40kg x 12회", weight: 40, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "무릎 외측 방향으로 외전" },
+                    { id: "wed-2", name: "레그 프레스", category: "하체", target: "30kg x 15회", weight: 30, reps: 15, step: 5, sets: [null, null, null], note: "", tip: "뒤꿈치 힘으로 단단히 밀기" },
+                    { id: "wed-3", name: "레그 익스텐션", category: "하체", target: "15kg x 12회", weight: 15, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "최대 수축 후 천천히 버티기" },
+                    { id: "wed-4", name: "레그 컬", category: "하체", target: "15kg x 12회", weight: 15, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "허벅지 뒷근육의 텐션 제어" }
+                ]
+            },
+            thu: {
+                tabLabel: "목 (코어)",
+                mainTitle: "목요일: 코어 & 유산소 세션",
+                subTitle: "코어 근육 저항성 향상 및 심폐 회복 유도",
+                directive: "신체 중심부를 잡아주는 코어 활성화와 체지방 연소를 촉진하는 심폐 유산소 트레이닝 데이입니다.",
+                items: [
+                    { id: "thu-0", name: "전신 스트레칭 (웜업)", category: "웜업", target: "스트레칭 10분", isWarmup: true, duration: 10, note: "", tip: "전신 이완 및 심박수 준비" },
+                    { id: "thu-1", name: "플랭크 (Plank)", category: "코어", target: "맨몸 x 60초 버티기", isBodyweight: true, weight: 0, reps: 60, step: 1, sets: [null, null, null], note: "", tip: "골반 중립 및 전신 텐션 체크" },
+                    { id: "thu-2", name: "AB 휠 (AB Wheel)", category: "코어", target: "맨몸 x 10회", isBodyweight: true, weight: 0, reps: 10, step: 1, sets: [null, null, null], note: "", tip: "복근에 저항을 걸고 상체 제어" },
+                    { id: "thu-3", name: "좌식 사이클 (유산소)", category: "유산소", target: "30분 수행", isCardio: true, duration: 30, note: "", tip: "페달링 강도 3~4 고정 유지" }
+                ]
+            },
+            fri: {
+                tabLabel: "금 (상체)",
+                mainTitle: "금요일: 상체 보완 (등 & 가슴 & 어깨)",
+                subTitle: "고른 볼륨 성장을 위한 상체 복합 패키지",
+                directive: "밀기와 당기기 운동의 밸런스를 균형 있게 보강하는 상체 전반 하이퍼트로피 타겟의 피드백 코칭 세션입니다.",
+                items: [
+                    { id: "fri-0", name: "가벼운 걷기 및 회전근개 (웜업)", category: "웜업", target: "빠른 걷기 10분", isWarmup: true, duration: 10, note: "", tip: "체온 높여 운동 효율 증가" },
+                    { id: "fri-1", name: "체스트 프레스 머신", category: "가슴", target: "30kg x 12회", weight: 30, reps: 12, step: 2.5, sets: [null, null, null], note: "", tip: "수축 제어 및 대흉근 집중" },
+                    { id: "fri-2", name: "랫풀다운 (Lat Pulldown)", category: "등", target: "35kg x 12회", weight: 35, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "등 상부 자극점을 강하게 쥐어짜기" },
+                    { id: "fri-3", name: "사이드 레터럴 레이즈", category: "어깨", target: "4kg x 15회", weight: 4, reps: 15, step: 0.5, sets: [null, null, null], note: "", tip: "측면 어깨 볼륨 타겟팅" },
+                    { id: "fri-4", name: "케이블 푸시다운 (로프)", category: "삼두", target: "15kg x 12회", weight: 15, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "팔 뒷근육 확실하게 수축" }
+                ]
+            },
+            sat: {
+                tabLabel: "토 (하체)",
+                mainTitle: "토요일: 하체 & 코어 보완",
+                subTitle: "밀도 높은 자극과 고관절 후면부 트레이닝",
+                directive: "한 주의 피로를 털어내며 하체 후면 사슬(햄스트링/둔근) 및 코어 근육을 밀도 높게 채우는 주말 강화 프로그램입니다.",
+                items: [
+                    { id: "sat-0", name: "동적 폼롤러 스트레칭 (웜업)", category: "웜업", target: "스트레칭 10분", isWarmup: true, duration: 10, note: "", tip: "하체 근막 이완" },
+                    { id: "sat-1", name: "레그 프레스", category: "하체", target: "40kg x 12회", weight: 40, reps: 12, step: 5, sets: [null, null, null], note: "", tip: "대퇴부 자극 극대화" },
+                    { id: "sat-2", name: "덤벨 루마니안 데드리프트", category: "하체", target: "10kg x 12회", weight: 10, reps: 12, step: 2, sets: [null, null, null], note: "", tip: "고관절 접기 힙힌지 중심 동작" },
+                    { id: "sat-3", name: "AB 휠 (AB Wheel)", category: "코어", target: "맨몸 x 10회", isBodyweight: true, weight: 0, reps: 10, step: 1, sets: [null, null, null], note: "", tip: "골반이 꺾이지 않도록 지탱" },
+                    { id: "sat-4", name: "플랭크 (Plank)", category: "코어", target: "맨몸 x 60초 버티기", isBodyweight: true, weight: 0, reps: 60, step: 1, sets: [null, null, null], note: "", tip: "지면을 밀어내듯 코어 유지" }
+                ]
+            },
+            sun: {
+                tabLabel: "일 (휴식)",
+                mainTitle: "일요일: 전신 회복 및 휴식",
+                subTitle: "신체 순환 촉진 및 질 높은 스트레칭 프로그램",
+                directive: "근조직의 성장과 관절 회복은 완전한 충전 상태에서만 완벽히 일어납니다. 스트레칭을 통해 전신 혈류를 순환시켜 줍니다.",
+                items: [
+                    { id: "sun-0", name: "전신 이완 요가 스트레칭 (웜업)", category: "웜업", target: "정적 전신 스트레칭 10분", isWarmup: true, duration: 10, note: "", tip: "누적 긴장 완화" },
+                    { id: "sun-1", name: "가벼운 산책 (유산소)", category: "유산소", target: "20분 가볍게 걷기", isCardio: true, duration: 20, note: "", tip: "신진대사 활성화" }
+                ]
+            }
+        };
+
+        let activeDay = 'mon';
+        let visibleDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        let wakeLock = null;
+        let deferredPrompt = null;
+        let resetConfirmActive = false;
+        let deleteConfirmActive = {};
+
+        const dayLabels = {
+            mon: "월 (당기기)",
+            tue: "화 (밀기)",
+            wed: "수 (하체)",
+            thu: "목 (코어)",
+            fri: "금 (상체)",
+            sat: "토 (하체)",
+            sun: "일 (휴식)"
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDatabase();
+            initSettingsCheckboxes();
+            renderVisibleDaysTabs();
+            changeDay(activeDay);
+            lucide.createIcons();
+            initPwaSupport();
+            detectIframeSecurity();
+            
+            // Wire up exercise modal event listeners
+            document.querySelectorAll('input[name="ex-type"]').forEach(rad => {
+                rad.addEventListener('change', updateExTypeRadioUI);
+            });
+        });
+
+        // Load database, active day, and visible days list safely
+        function loadDatabase() {
+            const savedDb = localStorage.getItem('gems_workout_database_v1');
+            const savedDay = localStorage.getItem('gems_active_day');
+            const savedVisibleDays = localStorage.getItem('gems_visible_days');
+
+            if (savedVisibleDays) {
+                try {
+                    const parsedDays = JSON.parse(savedVisibleDays);
+                    if (Array.isArray(parsedDays) && parsedDays.length > 0) {
+                        visibleDays = parsedDays;
+                    }
+                } catch (e) {
+                    console.warn("Visible days config load failed, using default list.");
+                }
+            }
+
+            if (savedDay && ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].includes(savedDay)) {
+                activeDay = savedDay;
+            }
+
+            // Ensure the activeDay is part of the visible days; if not, switch to the first visible day
+            if (!visibleDays.includes(activeDay)) {
+                activeDay = visibleDays[0] || 'mon';
+            }
+
+            if (savedDb) {
+                try {
+                    const parsed = JSON.parse(savedDb);
+                    // Standard validation: check if mon, tue etc. exist and have items
+                    let isValid = false;
+                    for (const d in parsed) {
+                        if (parsed[d].items && Array.isArray(parsed[d].items)) {
+                            isValid = true;
+                            break;
+                        }
+                    }
+                    if (isValid) {
+                        for (const day in parsed) {
+                            if (parsed[day]) {
+                                database[day] = parsed[day];
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Storage data corrupted, using core structure template.");
+                }
+            }
+        }
+
+        // Save active states
+        function saveDatabase() {
+            try {
+                localStorage.setItem('gems_workout_database_v1', JSON.stringify(database));
+                localStorage.setItem('gems_active_day', activeDay);
+                localStorage.setItem('gems_visible_days', JSON.stringify(visibleDays));
+            } catch (e) {
+                console.error("Local Storage is disabled or full.", e);
+            }
+        }
+
+        // Initialize Settings Modal Checkboxes
+        function initSettingsCheckboxes() {
+            const checkboxes = document.querySelectorAll('.day-toggle-checkbox');
+            checkboxes.forEach(chk => {
+                chk.checked = visibleDays.includes(chk.value);
+            });
+        }
+
+        // Dynamic rendering of Dashboard Tabbar Buttons
+        function renderVisibleDaysTabs() {
+            const tabsHolder = document.getElementById('visible-days-tabs');
+            tabsHolder.innerHTML = '';
+
+            visibleDays.forEach(day => {
+                const btn = document.createElement('button');
+                btn.id = `tab-${day}`;
+                btn.onclick = () => changeDay(day);
+                
+                const isSelected = (day === activeDay);
+                if (isSelected) {
+                    btn.className = "btn-tap flex-1 min-w-[70px] py-3 text-center rounded-xl text-xs font-bold transition-all duration-200 bg-[#a78bfa] text-[#1e1e1e] shadow-md shadow-[#a78bfa]/10";
+                } else {
+                    btn.className = "btn-tap flex-1 min-w-[70px] py-3 text-center rounded-xl text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200";
+                }
+                
+                btn.innerText = database[day].tabLabel || dayLabels[day];
+                tabsHolder.appendChild(btn);
+            });
+        }
+
+        function openSettingsModal() {
+            initSettingsCheckboxes();
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        // Apply changes from visible days selector modal
+        function applyVisibleDays() {
+            const checkboxes = document.querySelectorAll('.day-toggle-checkbox');
+            const newVisibleDays = [];
+            
+            checkboxes.forEach(chk => {
+                if (chk.checked) {
+                    newVisibleDays.push(chk.value);
+                }
+            });
+
+            if (newVisibleDays.length === 0) {
+                triggerToastBanner("최소 하나의 요일은 활성화되어야 합니다!");
+                return;
+            }
+
+            visibleDays = newVisibleDays;
+            
+            if (!visibleDays.includes(activeDay)) {
+                activeDay = visibleDays[0];
+            }
+
+            saveDatabase();
+            renderVisibleDaysTabs();
+            changeDay(activeDay);
+            closeSettingsModal();
+            triggerToastBanner("요일 노출 설정이 변경되었습니다.");
+        }
+
+        function initPwaSupport() {
+            const manifestObj = {
+                name: "스마트 모바일 운동 캔버스",
+                short_name: "운동 캔버스",
+                start_url: window.location.href,
+                display: "standalone",
+                background_color: "#1e1e1e",
+                theme_color: "#a78bfa",
+                icons: [
+                    {
+                        src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%231e1e1e'/><circle cx='96' cy='96' r='50' fill='%23a78bfa'/><text x='96' y='112' font-family='sans-serif' font-size='48' font-weight='bold' fill='%231e1e1e' text-anchor='middle'>L</text></svg>",
+                        sizes: "192x192",
+                        type: "image/svg+xml"
+                    },
+                    {
+                        src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%231e1e1e'/><circle cx='256' cy='256' r='130' fill='%23a78bfa'/><text x='256' y='296' font-family='sans-serif' font-size='120' font-weight='bold' fill='%231e1e1e' text-anchor='middle'>L</text></svg>",
+                        sizes: "512x512",
+                        type: "image/svg+xml"
+                    }
+                ]
+            };
+            const manifestStr = JSON.stringify(manifestObj);
+            const manifestBlob = new Blob([manifestStr], {type: 'application/json'});
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = URL.createObjectURL(manifestBlob);
+            document.head.appendChild(link);
+
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                    });
+                `;
+                const swBlob = new Blob([swCode], {type: 'application/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+                    .then(() => console.log('SW Active'))
+                    .catch(err => console.log('SW Issue', err));
+            }
+        }
+
+        function detectIframeSecurity() {
+            const indicator = document.getElementById('wake-lock-indicator');
+            const icon = document.getElementById('wake-lock-icon');
+            const text = document.getElementById('wake-lock-text');
+
+            const isRestrictedFrame = (window.self !== window.top);
+
+            if (isRestrictedFrame) {
+                indicator.className = "btn-tap px-2.5 py-1.5 bg-[#a78bfa]/10 border border-[#a78bfa]/20 rounded-xl text-[10px] font-bold text-[#a78bfa] flex items-center gap-1 transition-all";
+                icon.setAttribute('data-lucide', 'shield-alert');
+                text.innerText = "제한됨 (미리보기)";
+                document.getElementById('pwa-install-banner').classList.remove('hidden');
+            } else {
+                document.getElementById('pwa-install-banner').classList.add('hidden');
+                indicator.className = "btn-tap px-2.5 py-1.5 bg-[#262626] border border-[#3a3a3a] rounded-xl text-[10px] font-bold text-slate-500 flex items-center gap-1 transition-all";
+                icon.setAttribute('data-lucide', 'sun-dim');
+                text.innerText = "화면 유지 대기";
+                requestWakeLock();
+            }
+            lucide.createIcons();
+        }
+
+        function triggerWakeLockAction() {
+            const isRestrictedFrame = (window.self !== window.top);
+            if (isRestrictedFrame) {
+                openInstallModal();
+            } else {
+                if (wakeLock) {
+                    wakeLock.release().then(() => {
+                        wakeLock = null;
+                        updateWakeLockUI(false);
+                    });
+                } else {
+                    requestWakeLock();
+                }
+            }
+        }
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    updateWakeLockUI(true);
+                    wakeLock.addEventListener('release', () => {
+                        updateWakeLockUI(false);
+                    });
+                } else {
+                    updateWakeLockUI(false, "미지원 기기");
+                }
+            } catch (err) {
+                updateWakeLockUI(false, "설정 대기");
+            }
+        }
+
+        function updateWakeLockUI(isActive, altText) {
+            const indicator = document.getElementById('wake-lock-indicator');
+            const icon = document.getElementById('wake-lock-icon');
+            const label = document.getElementById('wake-lock-text');
+
+            if (isActive) {
+                indicator.className = "btn-tap px-2.5 py-1.5 bg-[#a78bfa]/10 border border-[#a78bfa]/20 rounded-xl text-[10px] font-bold text-[#a78bfa] flex items-center gap-1.5 transition-all duration-350";
+                icon.setAttribute('data-lucide', 'sun');
+                label.innerText = "화면 유지 활성화";
+            } else {
+                indicator.className = "btn-tap px-2.5 py-1.5 bg-[#262626] border border-[#3a3a3a] rounded-xl text-[10px] font-bold text-slate-500 flex items-center gap-1.5 transition-all duration-350";
+                icon.setAttribute('data-lucide', 'sun-dim');
+                label.innerText = altText || "화면 유지 비활성화";
+            }
+            lucide.createIcons();
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            const isRestrictedFrame = (window.self !== window.top);
+            if (!isRestrictedFrame && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        // Routine Info Editing Modal functions
+        function openRoutineModal() {
+            const selected = database[activeDay];
+            document.getElementById('edit-routine-tablabel').value = selected.tabLabel || dayLabels[activeDay];
+            document.getElementById('edit-routine-title').value = selected.mainTitle;
+            document.getElementById('edit-routine-subtitle').value = selected.subTitle;
+            document.getElementById('edit-routine-directive').value = selected.directive;
+            
+            document.getElementById('routine-modal').classList.remove('hidden');
+        }
+
+        function closeRoutineModal() {
+            document.getElementById('routine-modal').classList.add('hidden');
+        }
+
+        function saveRoutineInfo() {
+            const tabLabel = document.getElementById('edit-routine-tablabel').value.trim();
+            const title = document.getElementById('edit-routine-title').value.trim();
+            const subtitle = document.getElementById('edit-routine-subtitle').value.trim();
+            const directive = document.getElementById('edit-routine-directive').value.trim();
+
+            if (!title) {
+                triggerToastBanner("루틴 타이틀을 입력해 주세요.");
+                return;
+            }
+
+            const selected = database[activeDay];
+            selected.tabLabel = tabLabel || dayLabels[activeDay];
+            selected.mainTitle = title;
+            selected.subTitle = subtitle;
+            selected.directive = directive;
+
+            closeRoutineModal();
+            saveDatabase();
+            
+            // Update UI texts immediately
+            document.getElementById('gems-directive').innerText = directive;
+            document.getElementById('routine-main-title').innerText = title;
+            document.getElementById('routine-sub-title').innerText = subtitle;
+            
+            renderVisibleDaysTabs();
+            triggerToastBanner("루틴 정보가 수정되었습니다.");
+        }
+
+        function changeDay(day) {
+            activeDay = day;
+            
+            visibleDays.forEach(d => {
+                const tab = document.getElementById(`tab-${d}`);
+                if (!tab) return;
+                
+                if (d === day) {
+                    tab.className = "btn-tap flex-1 min-w-[70px] py-3 text-center rounded-xl text-xs font-bold transition-all duration-200 bg-[#a78bfa] text-[#1e1e1e] shadow-md shadow-[#a78bfa]/10";
+                } else {
+                    tab.className = "btn-tap flex-1 min-w-[70px] py-3 text-center rounded-xl text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200";
+                }
+            });
+
+            const selected = database[day];
+            document.getElementById('gems-directive').innerText = selected.directive || "";
+            document.getElementById('routine-main-title').innerText = selected.mainTitle || "";
+            document.getElementById('routine-sub-title').innerText = selected.subTitle || "";
+
+            saveDatabase(); // Instantly save dynamic tab position!
+            renderActiveRoutine();
+        }
+
+        function renderActiveRoutine() {
+            const list = document.getElementById('exercise-list');
+            list.innerHTML = '';
+
+            const items = database[activeDay].items || [];
+
+            items.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = "bg-[#262626] border border-[#3a3a3a] rounded-2xl p-4 space-y-4 shadow-sm";
+
+                let catColor = "bg-[#a78bfa]/10 text-[#a78bfa] border-[#a78bfa]/20";
+                if (item.category === "웜업") {
+                    catColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                }
+
+                let header = `
+                    <div class="flex justify-between items-start">
+                        <div class="space-y-1">
+                            <span class="text-[9px] ${catColor} font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-wider">${item.category}</span>
+                            <h3 class="text-sm font-bold text-white">${item.name}</h3>
+                            <p class="text-xs text-slate-400">가이드: ${item.target}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-400 font-bold bg-[#1e1e1e] px-2.5 py-1 rounded-xl border border-[#3a3a3a]">${item.tip}</span>
+                            <button onclick="openExerciseModal('${item.id}')" class="btn-tap p-1 bg-[#2a2a2a] hover:bg-[#3a3a3a] rounded-lg text-slate-400 hover:text-white" title="수정">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="deleteExercise('${item.id}')" class="btn-tap p-1 bg-[#2a2a2a] hover:bg-rose-950 rounded-lg text-slate-400 hover:text-rose-400" title="삭제">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                let body = '';
+                if (item.isWarmup) {
+                    body = `
+                        <!-- Warmup Component -->
+                        <div class="flex items-center justify-between bg-[#1e1e1e] p-3 rounded-2xl border border-[#2a2a2a] text-xs">
+                            <span class="text-slate-400 font-extrabold">실제 완료 시간</span>
+                            <div class="flex items-center space-x-3 bg-[#262626] px-3 py-1.5 rounded-xl border border-[#3a3a3a]">
+                                <button onclick="changeWarmupDuration('${item.id}', -1)" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                                <span class="font-black text-white text-sm px-2">${item.duration}분</span>
+                                <button onclick="changeWarmupDuration('${item.id}', 1)" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                    `;
+                } else if (!item.isCardio) {
+                    body = `
+                        <!-- Set Buttons -->
+                        <div class="grid grid-cols-3 gap-2 py-0.5">
+                            ${item.sets.map((setVal, idx) => {
+                                const completed = setVal !== null;
+                                let dispText = '기록하기';
+                                if (completed) {
+                                    dispText = item.isBodyweight ? `${setVal.r}회` : `${setVal.w}kg / ${setVal.r}회`;
+                                }
+                                return `
+                                    <button onclick="toggleSetStatus('${item.id}', ${idx})" class="btn-tap py-3 rounded-2xl border font-bold text-xs flex flex-col items-center justify-center transition-all ${completed ? 'bg-[#a78bfa] text-[#1e1e1e] border-[#a78bfa] shadow-md' : 'bg-[#1e1e1e] border-[#3a3a3a] text-slate-500' }">
+                                        <span class="text-[9px] ${completed ? 'text-[#1e1e1e]/60' : 'text-slate-600'} font-black uppercase">${idx + 1}세트</span>
+                                        <span class="text-xs font-extrabold mt-0.5">${dispText}</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <!-- Balanced Adjusters Layout -->
+                        <div class="bg-[#1e1e1e] p-3 rounded-2xl border border-[#2a2a2a] grid ${item.isBodyweight ? 'grid-cols-1' : 'grid-cols-2'} gap-3 text-xs">
+                            ${item.isBodyweight ? '' : `
+                            <div class="flex items-center justify-center space-x-2 bg-[#262626] px-2.5 py-2 rounded-xl border border-[#3a3a3a]">
+                                <span class="text-slate-400 font-extrabold shrink-0">중량</span>
+                                <button onclick="changeVal('${item.id}', 'w', -${item.step})" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                                <span class="font-extrabold text-white min-w-[42px] text-center text-xs">${item.weight}kg</span>
+                                <button onclick="changeVal('${item.id}', 'w', ${item.step})" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                            `}
+                            <div class="flex items-center justify-center space-x-2 bg-[#262626] px-2.5 py-2 rounded-xl border border-[#3a3a3a]">
+                                <span class="text-slate-400 font-extrabold shrink-0">횟수</span>
+                                <button onclick="changeVal('${item.id}', 'r', -1)" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                                <span class="font-extrabold text-white min-w-[28px] text-center text-xs">${item.reps}회</span>
+                                <button onclick="changeVal('${item.id}', 'r', 1)" class="btn-tap p-1 bg-[#2a2a2a] text-slate-300 hover:text-white rounded-lg"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    body = `
+                        <!-- Cardio Component -->
+                        <div class="flex items-center justify-between bg-[#1e1e1e] p-3 rounded-2xl border border-[#2a2a2a] text-xs">
+                            <span class="text-slate-400 font-extrabold">수행 시간</span>
+                            <div class="flex items-center space-x-3 bg-[#262626] px-3 py-1.5 rounded-xl border border-[#3a3a3a]">
+                                <button onclick="changeCardio('${item.id}', -5)" class="btn-tap p-1 bg-[#1e1e1e] text-slate-300 hover:text-white rounded-lg"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                                <span class="font-black text-white text-sm px-2">${item.duration}분</span>
+                                <button onclick="changeCardio('${item.id}', 5)" class="btn-tap p-1 bg-[#1e1e1e] text-slate-300 hover:text-white rounded-lg"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let comment = `
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-3.5 text-slate-500"><i data-lucide="message-square-text" class="w-4 h-4"></i></span>
+                        <input type="text" value="${item.note || ''}" oninput="updateItemComment('${item.id}', this.value)" placeholder="통증 및 세션 특이사항 피드백 입력" 
+                            class="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-xs text-slate-300 rounded-2xl pl-10 pr-3 py-3.5 focus:outline-none focus:border-[#a78bfa] placeholder-slate-650 transition">
+                    </div>
+                `;
+
+                card.innerHTML = header + body + comment;
+                list.appendChild(card);
+            });
+
+            updateProgressPct();
+            saveDatabase(); // Auto-save all changes securely on render lifecycle!
+            lucide.createIcons();
+        }
+
+        function toggleSetStatus(itemId, setIdx) {
+            const item = database[activeDay].items.find(i => i.id === itemId);
+            if (item.sets[setIdx] === null) {
+                item.sets[setIdx] = { w: item.weight, r: item.reps };
+            } else {
+                item.sets[setIdx] = null;
+            }
+            renderActiveRoutine();
+        }
+
+        function changeVal(itemId, field, amt) {
+            const item = database[activeDay].items.find(i => i.id === itemId);
+            if (field === 'w') item.weight = Math.max(0, item.weight + amt);
+            if (field === 'r') item.reps = Math.max(1, item.reps + amt);
+            renderActiveRoutine();
+        }
+
+        function changeCardio(itemId, amt) {
+            const item = database[activeDay].items.find(i => i.id === itemId);
+            item.duration = Math.max(0, item.duration + amt);
+            renderActiveRoutine();
+        }
+
+        function changeWarmupDuration(itemId, amt) {
+            const item = database[activeDay].items.find(i => i.id === itemId);
+            item.duration = Math.max(0, item.duration + amt);
+            renderActiveRoutine();
+        }
+
+        function updateItemComment(itemId, value) {
+            const item = database[activeDay].items.find(i => i.id === itemId);
+            item.note = value;
+            saveDatabase(); // Safely save the text states on active keystrokes
+        }
+
+        function updateProgressPct() {
+            const items = database[activeDay].items || [];
+            let total = items.length;
+            let done = 0;
+
+            items.forEach(it => {
+                if (it.isCardio && it.duration > 0) done++;
+                if (it.isWarmup && it.duration > 0) done++;
+                if (!it.isCardio && !it.isWarmup && it.sets.some(s => s !== null)) done++;
+            });
+
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('progress-percent').innerText = `${pct}%`;
+        }
+
+        function copyRoutineResults() {
+            const data = database[activeDay];
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, '0')}. ${String(now.getDate()).padStart(2, '0')}`;
+            
+            let report = `[ LUMORA WORKOUT REPORT ]\n`;
+            report += `────────────────────────────\n`;
+            report += `SESSION : ${data.mainTitle}\n`;
+            report += `DATE    : ${dateStr}\n\n`;
+
+            data.items.forEach(it => {
+                let actual = '';
+                if (it.isCardio || it.isWarmup) {
+                    actual = it.duration > 0 ? `${it.duration}분 수행` : '컨디션 조절 및 패스';
+                } else {
+                    const doneSets = it.sets.filter(s => s !== null);
+                    if (doneSets.length > 0) {
+                        actual = doneSets.map((s, idx) => {
+                            return it.isBodyweight ? `${idx + 1}SET (${s.r}회)` : `${idx + 1}SET (${s.w}kg / ${s.r}회)`;
+                        }).join(', ');
+                    } else {
+                        actual = '컨디션 조절 및 패스';
+                    }
+                }
+                report += `■ ${it.name} (${it.category})\n`;
+                report += `  수행 기록 : ${actual}\n`;
+                if (it.note && it.note.trim()) {
+                    report += `  피드백    : ${it.note}\n`;
+                }
+                report += `\n`;
+            });
+
+            report += `────────────────────────────\n`;
+            report += `* 본 기록은 브라우저 로컬 저장소에 안전하게 유지됩니다.`;
+
+            const tempBox = document.createElement('textarea');
+            tempBox.value = report;
+            tempBox.style.position = 'fixed';
+            document.body.appendChild(tempBox);
+            tempBox.select();
+            try {
+                document.execCommand('copy');
+                triggerToastBanner("오늘의 운동 기록이 복사되었습니다. 대화창에 바로 붙여넣기 해주세요!");
+            } catch (err) {
+                triggerToastBanner("복사에 실패했습니다. 수동 복사 부탁드립니다.");
+            }
+            document.body.removeChild(tempBox);
+        }
+
+        function triggerToastBanner(text) {
+            const toast = document.getElementById('custom-toast');
+            document.getElementById('toast-text').innerText = text;
+            toast.className = toast.className.replace('opacity-0 scale-95 pointer-events-none', 'opacity-100 scale-100');
+            setTimeout(() => {
+                toast.className = toast.className.replace('opacity-100 scale-100', 'opacity-0 scale-95 pointer-events-none');
+            }, 3000);
+        }
+
+        // Base64 Import & Export Controllers
+        function openBackupModal() {
+            const dbString = JSON.stringify(database);
+            try {
+                const base64Code = btoa(unescape(encodeURIComponent(dbString)));
+                document.getElementById('export-code-area').value = base64Code;
+            } catch (e) {
+                document.getElementById('export-code-area').value = "에러: 백업 코드를 로드하지 못했습니다.";
+            }
+            document.getElementById('import-code-area').value = "";
+            document.getElementById('backup-modal').classList.remove('hidden');
+        }
+
+        function closeBackupModal() {
+            document.getElementById('backup-modal').classList.add('hidden');
+        }
+
+        function copyBackupCode() {
+            const area = document.getElementById('export-code-area');
+            area.select();
+            try {
+                document.execCommand('copy');
+                triggerToastBanner("백업용 보안 코드가 복사되었습니다! 안전한 곳에 기록해 두세요.");
+            } catch (e) {
+                triggerToastBanner("복사 실패. 텍스트를 수동으로 전체 드래그 복사해 주세요.");
+            }
+        }
+
+        function importBackupCode() {
+            const inputArea = document.getElementById('import-code-area');
+            const code = inputArea.value.trim();
+            if (!code) {
+                triggerToastBanner("복원할 백업 코드를 입력해 주세요.");
+                return;
+            }
+
+            try {
+                const decodedStr = decodeURIComponent(escape(atob(code)));
+                const importedData = JSON.parse(decodedStr);
+                
+                let isValid = false;
+                for (const d in importedData) {
+                    if (importedData[d].items && Array.isArray(importedData[d].items)) {
+                        isValid = true;
+                        break;
+                    }
+                }
+
+                if (!isValid) throw new Error("Invalid structure format.");
+
+                for (const day in importedData) {
+                    if (importedData[day]) {
+                        database[day] = importedData[day];
+                    }
+                }
+
+                saveDatabase();
+                loadDatabase(); // Reload structures
+                renderVisibleDaysTabs();
+                changeDay(activeDay);
+                closeBackupModal();
+                triggerToastBanner("기록이 완벽하게 동기화 복원되었습니다!");
+            } catch (e) {
+                triggerToastBanner("올바르지 않은 복원 코드입니다. 복사한 코드가 완전한지 체크해 보세요.");
+            }
+        }
+
+        function resetAllData() {
+            const btn = document.getElementById('reset-data-btn');
+            if (!resetConfirmActive) {
+                resetConfirmActive = true;
+                btn.innerText = "⚠️ 한번 더 클릭 시 정말 전체 초기화!";
+                btn.className = "btn-tap text-[10px] text-amber-500 font-black transition duration-200";
+                
+                setTimeout(() => {
+                    resetConfirmActive = false;
+                    btn.innerText = "현재 브라우저 기록 전체 초기화하기";
+                    btn.className = "btn-tap text-[10px] text-rose-500 hover:text-rose-400 font-extrabold underline transition duration-200";
+                }, 3500);
+            } else {
+                localStorage.removeItem('gems_workout_database_v1');
+                localStorage.removeItem('gems_active_day');
+                localStorage.removeItem('gems_visible_days');
+                window.location.reload();
+            }
+        }
+
+        function openSpecModal() {
+            document.getElementById('spec-modal').classList.remove('hidden');
+        }
+
+        function closeSpecModal() {
+            document.getElementById('spec-modal').classList.add('hidden');
+        }
+
+        function openInstallModal() {
+            document.getElementById('pwa-modal').classList.remove('hidden');
+        }
+
+        function closeInstallModal() {
+            document.getElementById('pwa-modal').classList.add('hidden');
+        }
+
+        // Exercise Modal functions
+        function openExerciseModal(itemId) {
+            document.getElementById('edit-exercise-id').value = itemId || '';
+            
+            const modalIcon = document.getElementById('exercise-modal-icon');
+            const modalTitle = document.getElementById('exercise-modal-title');
+            
+            if (!itemId) {
+                modalIcon.setAttribute('data-lucide', 'plus-circle');
+                modalTitle.innerText = "새로운 운동 추가";
+                
+                document.getElementById('edit-ex-name').value = '';
+                document.getElementById('edit-ex-category').value = '등';
+                document.getElementById('edit-ex-sets-count').value = '3';
+                document.getElementById('ex-type-normal').checked = true;
+                document.getElementById('edit-ex-weight').value = '30';
+                document.getElementById('edit-ex-reps').value = '12';
+                document.getElementById('edit-ex-duration').value = '10';
+                document.getElementById('edit-ex-target').value = '';
+                document.getElementById('edit-ex-tip').value = '';
+            } else {
+                modalIcon.setAttribute('data-lucide', 'edit');
+                modalTitle.innerText = "운동 정보 수정";
+                
+                const item = database[activeDay].items.find(it => it.id === itemId);
+                if (!item) return;
+                
+                document.getElementById('edit-ex-name').value = item.name;
+                document.getElementById('edit-ex-category').value = item.category;
+                document.getElementById('edit-ex-sets-count').value = item.sets.length.toString();
+                
+                if (item.isWarmup || item.isCardio) {
+                    document.getElementById('ex-type-cardio').checked = true;
+                } else if (item.isBodyweight) {
+                    document.getElementById('ex-type-bodyweight').checked = true;
+                } else {
+                    document.getElementById('ex-type-normal').checked = true;
+                }
+                
+                document.getElementById('edit-ex-weight').value = item.weight !== undefined ? item.weight : 0;
+                document.getElementById('edit-ex-reps').value = item.reps !== undefined ? item.reps : 0;
+                document.getElementById('edit-ex-duration').value = item.duration !== undefined ? item.duration : 10;
+                document.getElementById('edit-ex-target').value = item.target || '';
+                document.getElementById('edit-ex-tip').value = item.tip || '';
+            }
+            
+            lucide.createIcons();
+            updateExTypeRadioUI();
+            document.getElementById('exercise-modal').classList.remove('hidden');
+        }
+
+        function closeExerciseModal() {
+            document.getElementById('exercise-modal').classList.add('hidden');
+        }
+
+        function updateExTypeRadioUI() {
+            const types = ['normal', 'bodyweight', 'cardio'];
+            types.forEach(t => {
+                const rad = document.getElementById(`ex-type-${t}`);
+                const span = document.getElementById(`label-type-${t}`);
+                const parent = rad.parentElement;
+                if (rad.checked) {
+                    parent.className = "flex items-center justify-center p-2 bg-[#a78bfa]/10 border border-[#a78bfa] rounded-xl cursor-pointer select-none";
+                    span.className = "text-[10px] font-bold text-[#a78bfa]";
+                } else {
+                    parent.className = "flex items-center justify-center p-2 bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl cursor-pointer select-none";
+                    span.className = "text-[10px] font-bold text-slate-400";
+                }
+            });
+
+            const valGroup = document.getElementById('ex-values-group');
+            const durGroup = document.getElementById('ex-duration-group');
+            const type = document.querySelector('input[name="ex-type"]:checked').value;
+            
+            const weightField = document.getElementById('ex-weight-field');
+            const repsField = document.getElementById('ex-reps-field');
+            
+            if (type === 'normal') {
+                valGroup.classList.remove('hidden');
+                weightField.classList.remove('hidden');
+                repsField.classList.remove('hidden');
+                durGroup.classList.add('hidden');
+            } else if (type === 'bodyweight') {
+                valGroup.classList.remove('hidden');
+                weightField.classList.add('hidden');
+                repsField.classList.remove('hidden');
+                durGroup.classList.add('hidden');
+            } else {
+                valGroup.classList.add('hidden');
+                durGroup.classList.remove('hidden');
+            }
+        }
+
+        function saveExercise() {
+            const itemId = document.getElementById('edit-exercise-id').value;
+            const name = document.getElementById('edit-ex-name').value.trim();
+            const category = document.getElementById('edit-ex-category').value;
+            const setsCount = parseInt(document.getElementById('edit-ex-sets-count').value, 10);
+            const type = document.querySelector('input[name="ex-type"]:checked').value;
+            const weight = parseFloat(document.getElementById('edit-ex-weight').value) || 0;
+            const reps = parseInt(document.getElementById('edit-ex-reps').value, 10) || 0;
+            const duration = parseInt(document.getElementById('edit-ex-duration').value, 10) || 0;
+            const target = document.getElementById('edit-ex-target').value.trim();
+            const tip = document.getElementById('edit-ex-tip').value.trim();
+
+            if (!name) {
+                triggerToastBanner("운동명을 입력해 주세요.");
+                return;
+            }
+
+            const isWarmup = (category === '웜업');
+            const isCardio = (category === '유산소') || (type === 'cardio' && category !== '웜업');
+            const isBodyweight = (type === 'bodyweight');
+
+            let targetText = target;
+            if (!targetText) {
+                if (isCardio || isWarmup) {
+                    targetText = `${duration}분 수행`;
+                } else {
+                    targetText = isBodyweight ? `${reps}회` : `${weight}kg x ${reps}회`;
+                }
+            }
+
+            let item;
+            if (!itemId) {
+                const newId = `${activeDay}-${Date.now()}`;
+                const sets = Array(setsCount).fill(null);
+                
+                item = {
+                    id: newId,
+                    name,
+                    category,
+                    target: targetText,
+                    weight: isBodyweight || isCardio || isWarmup ? 0 : weight,
+                    reps: isCardio || isWarmup ? 0 : reps,
+                    step: category === '어깨' ? 0.5 : (category === '하체' ? 5 : 2.5),
+                    sets,
+                    note: '',
+                    tip: tip || (category + ' 가이드')
+                };
+                
+                if (isWarmup) item.isWarmup = true;
+                if (isCardio) item.isCardio = true;
+                if (isBodyweight) item.isBodyweight = true;
+                if (isWarmup || isCardio) item.duration = duration;
+
+                if (!database[activeDay].items) {
+                    database[activeDay].items = [];
+                }
+                database[activeDay].items.push(item);
+            } else {
+                item = database[activeDay].items.find(it => it.id === itemId);
+                if (!item) return;
+
+                item.name = name;
+                item.category = category;
+                item.target = targetText;
+                item.weight = isBodyweight || isCardio || isWarmup ? 0 : weight;
+                item.reps = isCardio || isWarmup ? 0 : reps;
+                item.tip = tip || (category + ' 가이드');
+
+                delete item.isWarmup;
+                delete item.isCardio;
+                delete item.isBodyweight;
+                delete item.duration;
+
+                if (isWarmup) item.isWarmup = true;
+                if (isCardio) item.isCardio = true;
+                if (isBodyweight) item.isBodyweight = true;
+                if (isWarmup || isCardio) item.duration = duration;
+
+                const currentSets = item.sets || [];
+                const newSets = [];
+                for (let i = 0; i < setsCount; i++) {
+                    if (i < currentSets.length) {
+                        newSets.push(currentSets[i]);
+                    } else {
+                        newSets.push(null);
+                    }
+                }
+                item.sets = newSets;
+            }
+
+            closeExerciseModal();
+            saveDatabase();
+            renderActiveRoutine();
+            triggerToastBanner(itemId ? "운동 정보가 수정되었습니다." : "새로운 운동이 추가되었습니다.");
+        }
+
+        function deleteExercise(itemId) {
+            if (!deleteConfirmActive[itemId]) {
+                deleteConfirmActive[itemId] = true;
+                triggerToastBanner("⚠️ 한 번 더 누르면 정말 삭제됩니다!");
+                
+                setTimeout(() => {
+                    deleteConfirmActive[itemId] = false;
+                }, 3000);
+            } else {
+                database[activeDay].items = database[activeDay].items.filter(it => it.id !== itemId);
+                deleteConfirmActive[itemId] = false;
+                saveDatabase();
+                renderActiveRoutine();
+                triggerToastBanner("운동이 삭제되었습니다.");
+            }
+        }
+    </script>
+</body>
+</html>

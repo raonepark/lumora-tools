@@ -17,6 +17,7 @@
 | **PNG ↔ JPG 변환** | [`converters/png-jpg/`](./converters/png-jpg/index.html) | PNG와 JPG 포맷을 상호 변환합니다. | 🔄 간편 변환 |
 | **ICO 변환기** | [`converters/ico/`](./converters/ico/index.html) | 이미지를 파비콘(Favicon)용 ICO 파일로 변환합니다. | 🎨 파비콘 제작 |
 | **해외 직구 사이즈 변환기** | [`converters/global-size-converter/`](./converters/global-size-converter/index.html) | 신발, 의류, 모자, 반지 등 해외 직구 시 필요한 사이즈를 변환해줍니다. | 👟 신발, 👕 의류, 🧢 모자, 💍 반지<br>⚡ 실시간 변환 |
+| **스마트 운동 캔버스** | [`converters/workout-guide/`](./converters/workout-guide/index.html) | 월~일요일 7일 전체 운동 루틴을 기록하고 복사해주는 가이드 캔버스입니다. | 📅 7일 루틴 커스텀<br>💪 운동 기록 저장 및 백업<br>💡 부상 방지 안전 가이드 |
 
 ---
 
